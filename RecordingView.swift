@@ -93,6 +93,9 @@ final class RecordingViewModel: ObservableObject {
             if record.title == nil { record.title = summary.title }
             record.summaryPoints = summary.points
             record.topics = summary.topics
+            if !summary.speakerPredictions.isEmpty {
+                record.speakerNames = summary.speakerPredictions
+            }
             record.nextSteps = summary.nextSteps
             record.status = .complete
             try? modelContext.save()
@@ -160,6 +163,9 @@ final class RecordingViewModel: ObservableObject {
             if record.title == nil { record.title = summary.title }
             record.summaryPoints = summary.points
             record.topics = summary.topics
+            if !summary.speakerPredictions.isEmpty {
+                record.speakerNames = summary.speakerPredictions
+            }
             record.nextSteps = summary.nextSteps
             record.status = .complete
             try? modelContext.save()
@@ -213,6 +219,9 @@ final class RecordingViewModel: ObservableObject {
             if record.title == nil { record.title = summary.title }
             record.summaryPoints = summary.points
             record.topics = summary.topics
+            if !summary.speakerPredictions.isEmpty {
+                record.speakerNames = summary.speakerPredictions
+            }
             record.nextSteps = summary.nextSteps
             record.status = .complete
             try? modelContext.save()

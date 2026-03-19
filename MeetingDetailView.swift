@@ -150,6 +150,9 @@ struct MeetingDetailView: View {
             if record.title == nil { record.title = summary.title }
             record.summaryPoints = summary.points
             record.topics = summary.topics
+            if !summary.speakerPredictions.isEmpty {
+                record.speakerNames = summary.speakerPredictions
+            }
             record.nextSteps = summary.nextSteps
             record.status = .complete
             try? modelContext.save()
@@ -592,7 +595,16 @@ struct SpeakerEditorView: View {
                 } header: {
                     Text("說話者名稱")
                 } footer: {
-                    Text("命名後點「套用並重新分析」，AI 會依據每位說話者的角色重新解讀會議重點")
+                    VStack(alignment: .leading, spacing: 6) {
+                        if names.values.contains(where: { !$0.isEmpty }) {
+                            Label("已預填的名稱由 AI 從逐字稿推測，請確認是否正確", systemImage: "sparkles")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("命名後點「套用並重新分析」，AI 會依據每位說話者的角色重新解讀會議重點")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 if let msg = errorMessage {
@@ -671,6 +683,9 @@ struct SpeakerEditorView: View {
             let summary = try await AIService.shared.summarize(transcript: renamedTranscript)
             record.summaryPoints = summary.points
             record.topics = summary.topics
+            if !summary.speakerPredictions.isEmpty {
+                record.speakerNames = summary.speakerPredictions
+            }
             record.nextSteps = summary.nextSteps
             try? modelContext.save()
             dismiss()

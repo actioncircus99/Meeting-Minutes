@@ -160,6 +160,8 @@ final class AIService {
         let points: [String]
         let topics: [DiscussionTopic]
         let nextSteps: [NextStepItem]
+        /// 說話者預測，key 為說話者標籤（如 "A"），value 為預測名稱（低把握為空字串）
+        let speakerPredictions: [String: String]
     }
 
     func summarize(transcript: String) async throws -> SummaryResult {
@@ -221,13 +223,21 @@ final class AIService {
               "due_date": "截止日期（如有提及）或 null",
               "priority": "高、中、或低（依緊急程度與對會議目標的影響判斷）"
             }
-          ]
+          ],
+          "speaker_predictions": {
+            "A": {"name": "預測名稱或角色（高把握）或空字串（低把握）", "confidence": "高或低"},
+            "B": {"name": "", "confidence": "低"}
+          }
         }
 
         規則：
         - conclusions：2-5 個，沒有明確決議就寫「本次會議聚焦於討論，尚未形成明確決議」
         - topics：依實際討論議題拆分，最多 8 個，沒有明確議題就合併成一個
         - next_steps：有具體待辦才列，沒有就回傳空陣列 []
+        - speaker_predictions：分析每位說話者在逐字稿中的角色和身份線索
+          - confidence 為「高」的條件：逐字稿中有明確線索，例如被他人稱呼名字、自我介紹、明確提及職位、或展現特定角色的決策模式
+          - confidence 為「低」的條件：無法從對話內容判斷身份，name 填空字串 ""
+          - name 可以是姓名（如「陳總」）或角色（如「工程師」「PM」「老闆」），用最清楚的方式描述
         - 技術術語或英文專有名詞可保留英文
 
         逐字稿：
@@ -300,11 +310,25 @@ final class AIService {
             )
         }
 
+        // 解析說話者預測，只保留 confidence 為「高」的
+        var speakerPredictions: [String: String] = [:]
+        if let predictions = result["speaker_predictions"] as? [String: Any] {
+            for (label, value) in predictions {
+                guard let info = value as? [String: Any],
+                      let confidence = info["confidence"] as? String,
+                      confidence == "高",
+                      let name = info["name"] as? String,
+                      !name.isEmpty else { continue }
+                speakerPredictions[label] = name
+            }
+        }
+
         return SummaryResult(
             title: result["title"] as? String ?? "會議記錄",
             points: points,
             topics: topics,
-            nextSteps: steps
+            nextSteps: steps,
+            speakerPredictions: speakerPredictions
         )
     }
 }
