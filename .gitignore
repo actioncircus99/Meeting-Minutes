@@ -22,3 +22,14 @@ build/
 # SPM
 .build/
 *.resolved
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Environment / secrets
+.env
+.env.*
+Secrets.plist
+Config.plist
+APIKeys.plist
