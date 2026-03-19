@@ -64,8 +64,8 @@ struct MeetingListView: View {
                 } label: {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 64))
-                        .foregroundStyle(.red)
-                        .shadow(color: .red.opacity(0.3), radius: 8, y: 4)
+                        .foregroundStyle(Color(white: 0.1))
+                        .shadow(color: Color.black.opacity(0.15), radius: 8, y: 4)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 12)

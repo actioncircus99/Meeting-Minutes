@@ -231,9 +231,9 @@ struct MeetingDetailView: View {
                             Text("\(i + 1)")
                                 .font(.caption.bold())
                                 .frame(width: 26, height: 26)
-                                .background(Color.red.opacity(0.12))
+                                .background(Color(.secondarySystemBackground))
                                 .clipShape(Circle())
-                                .foregroundStyle(.red)
+                                .foregroundStyle(.primary)
                             Text(point).font(.body)
                         }
                         .padding(.vertical, 4)
@@ -474,7 +474,7 @@ struct AudioPlayerBar: View {
             } label: {
                 Image(systemName: vm.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: 38))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.primary)
             }
             .buttonStyle(.plain)
 
@@ -485,7 +485,7 @@ struct AudioPlayerBar: View {
                         set: { vm.seek(to: $0) }
                     )
                 )
-                .tint(.red)
+                .tint(.primary)
 
                 HStack {
                     Text(Int(vm.currentTime).formattedDuration)
@@ -620,7 +620,7 @@ struct SpeakerEditorView: View {
                         }
                     }
                     .foregroundStyle(.white)
-                    .listRowBackground(isReanalyzing ? Color.gray : Color.red)
+                    .listRowBackground(isReanalyzing ? Color(.systemGray4) : Color(white: 0.1))
                     .disabled(isReanalyzing || !hasAnyName)
                 }
             }

@@ -359,9 +359,10 @@ struct RecordingView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .fontWeight(.semibold)
+                    .foregroundStyle(.white)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
+            .buttonStyle(.plain)
+            .background(Color(white: 0.1))
             .clipShape(RoundedRectangle(cornerRadius: 14))
 
             Button {
@@ -371,9 +372,10 @@ struct RecordingView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.bordered)
-            .tint(.red)
+            .buttonStyle(.plain)
+            .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 14))
 
             if let err = vm.errorMessage {
@@ -455,9 +457,18 @@ struct RecordingView: View {
                 Text(record.title ?? "會議摘要已產生")
                     .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
             }
-            Button("回到列表") { dismiss() }
-                .buttonStyle(.borderedProminent)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+            Button {
+                dismiss()
+            } label: {
+                Text("回到列表")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+            .background(Color(white: 0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
         }
     }
 
@@ -495,5 +506,125 @@ struct RecordingView: View {
                 .buttonStyle(.bordered)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
         }
+    }
+}
+
+// MARK: - Siri Orb
+
+struct SiriOrbView: View {
+    enum OrbState {
+        case idle, recording, processing
+
+        var speed: Double {
+            switch self {
+            case .idle:       return 0.35
+            case .recording:  return 1.6
+            case .processing: return 0.75
+            }
+        }
+    }
+
+    let orbState: OrbState
+
+    var body: some View {
+        if #available(iOS 18.0, *) {
+            SiriOrbCoreView(orbState: orbState)
+        } else {
+            // iOS 18 以下的 fallback：簡單的橘紫漸層圓
+            Circle()
+                .fill(
+                    AngularGradient(
+                        colors: [.orange, .purple, .pink, .orange],
+                        center: .center
+                    )
+                )
+                .blur(radius: 3)
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+private struct SiriOrbCoreView: View {
+    let orbState: SiriOrbView.OrbState
+
+    var body: some View {
+        TimelineView(.animation) { context in
+            let t = Float(context.date.timeIntervalSinceReferenceDate * orbState.speed)
+            orbFrame(t: t)
+        }
+    }
+
+    private func orbFrame(t: Float) -> some View {
+        let cx = 0.3 + 0.35 * sin(t * 0.8)
+        let cy = 0.3 + 0.35 * cos(t * 0.6)
+        let cx2 = 0.6 + 0.25 * sin(t * 0.5 + 1.2)
+        let cy2 = 0.65 + 0.25 * cos(t * 0.7 + 0.8)
+
+        return ZStack {
+            MeshGradient(
+                width: 3,
+                height: 3,
+                points: [
+                    [0, 0],  [0.5, 0],  [1, 0],
+                    [0, 0.5],[Float(cx), Float(cy)],[1, 0.5],
+                    [0, 1],  [Float(cx2), Float(cy2)],[1, 1]
+                ],
+                colors: [
+                    Color(hue: 0.08,  saturation: 1.0, brightness: 1.0),
+                    Color(hue: 0.12,  saturation: 0.8, brightness: 1.0),
+                    Color(hue: 0.78,  saturation: 0.7, brightness: 0.9),
+                    Color(hue: 0.06,  saturation: 1.0, brightness: 0.9),
+                    Color(hue: 0.10 + 0.06 * Double(sin(t * 0.5)), saturation: 0.5, brightness: 1.0),
+                    Color(hue: 0.82,  saturation: 0.65, brightness: 0.88),
+                    Color(hue: 0.05,  saturation: 0.95, brightness: 0.85),
+                    Color(hue: 0.60,  saturation: 0.5,  brightness: 0.88),
+                    Color(hue: 0.85 + 0.05 * Double(sin(t * 0.4)), saturation: 0.7, brightness: 0.9)
+                ]
+            )
+
+            // 左上高光，製造球面感
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [.white.opacity(0.55), .clear],
+                        center: UnitPoint(x: 0.32, y: 0.28),
+                        startRadius: 0,
+                        endRadius: 45
+                    )
+                )
+                .blendMode(.screen)
+        }
+        .clipShape(Circle())
+        .shadow(color: Color.orange.opacity(0.4), radius: 14)
+    }
+}
+
+// MARK: - Shimmer Text
+
+struct ShimmerText: View {
+    let text: String
+    var font: Font = .body
+    @State private var phase: CGFloat = 0
+
+    var body: some View {
+        Text(text)
+            .font(font)
+            .overlay {
+                GeometryReader { geo in
+                    LinearGradient(
+                        colors: [.clear, .white.opacity(0.85), .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: geo.size.width * 0.45)
+                    .offset(x: -geo.size.width * 0.5 + phase * geo.size.width * 1.8)
+                }
+                .mask { Text(text).font(font) }
+            }
+            .onAppear {
+                withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+                    phase = 1
+                }
+            }
     }
 }
