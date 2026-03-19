@@ -568,21 +568,34 @@ struct SpeakerEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var names: [String: String] = [:]
+    @State private var orderedLabels: [String] = []
     @State private var isReanalyzing = false
     @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
             List {
+                // 說話者名稱 + 發言權重排序
                 Section {
-                    ForEach(record.speakerLabels, id: \.self) { label in
+                    ForEach(orderedLabels, id: \.self) { label in
                         HStack(spacing: 12) {
+                            // 排名圓圈
+                            let rank = (orderedLabels.firstIndex(of: label) ?? 0) + 1
+                            Text("\(rank)")
+                                .font(.caption.bold())
+                                .frame(width: 24, height: 24)
+                                .background(rank == 1 ? Color.orange.opacity(0.15) : Color(.secondarySystemBackground))
+                                .foregroundStyle(rank == 1 ? .orange : .secondary)
+                                .clipShape(Circle())
+
                             Text("說話者 \(label)")
                                 .foregroundStyle(.secondary)
-                                .frame(width: 72, alignment: .leading)
+                                .frame(width: 64, alignment: .leading)
+
                             Image(systemName: "arrow.right")
                                 .font(.caption2)
                                 .foregroundStyle(.tertiary)
+
                             TextField(
                                 "輸入名稱（例如：老闆）",
                                 text: Binding(
@@ -592,16 +605,22 @@ struct SpeakerEditorView: View {
                             )
                         }
                     }
+                    .onMove { from, to in
+                        orderedLabels.move(fromOffsets: from, toOffset: to)
+                    }
                 } header: {
-                    Text("說話者名稱")
+                    Text("說話者名稱與發言權重")
                 } footer: {
                     VStack(alignment: .leading, spacing: 6) {
+                        Label("第 1 位的發言在歧見時優先採納", systemImage: "arrow.up.circle")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
                         if names.values.contains(where: { !$0.isEmpty }) {
                             Label("已預填的名稱由 AI 從逐字稿推測，請確認是否正確", systemImage: "sparkles")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        Text("命名後點「套用並重新分析」，AI 會依據每位說話者的角色重新解讀會議重點")
+                        Text("長按右側拖把可調整順序；命名後點「套用並重新分析」")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -636,18 +655,30 @@ struct SpeakerEditorView: View {
                     .disabled(isReanalyzing || !hasAnyName)
                 }
             }
+            .environment(\.editMode, .constant(.active))
             .navigationTitle("說話者設定")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("關閉") {
-                        saveNames()
+                        saveNamesAndOrder()
                         dismiss()
                     }
                 }
             }
             .onAppear {
                 names = record.speakerNames
+                // 若已有儲存的順序則優先使用，否則依逐字稿出現順序
+                let saved = record.speakerOrder
+                let all = record.speakerLabels
+                if !saved.isEmpty {
+                    // 保留 saved 中還存在的標籤，補上 saved 中沒有的
+                    let savedFiltered = saved.filter { all.contains($0) }
+                    let missing = all.filter { !savedFiltered.contains($0) }
+                    orderedLabels = savedFiltered + missing
+                } else {
+                    orderedLabels = all
+                }
             }
         }
     }
@@ -656,8 +687,9 @@ struct SpeakerEditorView: View {
         names.values.contains(where: { !$0.isEmpty })
     }
 
-    private func saveNames() {
+    private func saveNamesAndOrder() {
         record.speakerNames = names.filter { !$0.value.isEmpty }
+        record.speakerOrder = orderedLabels
         try? modelContext.save()
     }
 
@@ -668,7 +700,7 @@ struct SpeakerEditorView: View {
         }
         errorMessage = nil
         isReanalyzing = true
-        saveNames()
+        saveNamesAndOrder()
 
         // 將 [說話者 A] 替換為使用者輸入的名稱
         var renamedTranscript = transcript
@@ -679,8 +711,16 @@ struct SpeakerEditorView: View {
             )
         }
 
+        // 發言權重：將說話者標籤轉成顯示名稱後傳入
+        let orderForAPI = orderedLabels.map { label in
+            record.speakerNames[label].flatMap { $0.isEmpty ? nil : $0 } ?? "說話者 \(label)"
+        }
+
         do {
-            let summary = try await AIService.shared.summarize(transcript: renamedTranscript)
+            let summary = try await AIService.shared.summarize(
+                transcript: renamedTranscript,
+                speakerOrder: orderForAPI
+            )
             record.summaryPoints = summary.points
             record.topics = summary.topics
             if !summary.speakerPredictions.isEmpty {

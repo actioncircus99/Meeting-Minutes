@@ -164,13 +164,27 @@ final class AIService {
         let speakerPredictions: [String: String]
     }
 
-    func summarize(transcript: String) async throws -> SummaryResult {
+    func summarize(transcript: String, speakerOrder: [String] = []) async throws -> SummaryResult {
         guard let apiKey = KeychainManager.claudeKey, !apiKey.isEmpty else {
             throw AIError.noAPIKey("Claude API Key")
         }
 
+        let speakerPriorityNote: String
+        if !speakerOrder.isEmpty {
+            let rankList = speakerOrder.enumerated().map { i, label in "第\(i+1)位：\(label)" }.joined(separator: "、")
+            speakerPriorityNote = """
+
+        【說話者發言權重】
+        \(rankList)
+        當與會者之間出現歧見或不同立場時，請優先採納排序靠前說話者的觀點來撰寫結論與摘要。
+
+        """
+        } else {
+            speakerPriorityNote = ""
+        }
+
         let prompt = """
-        你是一位有十五年經驗的資深企業秘書，剛剛旁聽完這場會議。你的任務是替**沒有參加這場會議的人**撰寫一份清晰易懂的會議摘要。
+        你是一位有十五年經驗的資深企業秘書，剛剛旁聽完這場會議。你的任務是替**沒有參加這場會議的人**撰寫一份清晰易懂的會議摘要。\(speakerPriorityNote)
 
         讀者完全不了解會議背景，你需要讓他們讀完後立刻明白：這場會議決定了什麼、討論了什麼、接下來誰要做什麼。
 

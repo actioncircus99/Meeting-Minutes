@@ -24,6 +24,8 @@ final class MeetingRecord {
     var speakerNamesData: Data?
     /// 討論議題摘要，JSON 編碼的 [DiscussionTopic]
     var topicsData: Data?
+    /// 說話者發言權重排序，JSON 編碼的 [String]（說話者標籤，由重要到次要）
+    var speakerOrderData: Data?
     var createdAt: Date
 
     init(title: String? = nil, startedAt: Date = .now) {
@@ -69,6 +71,16 @@ final class MeetingRecord {
         }
         set {
             topicsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    var speakerOrder: [String] {
+        get {
+            guard let data = speakerOrderData else { return [] }
+            return (try? JSONDecoder().decode([String].self, from: data)) ?? []
+        }
+        set {
+            speakerOrderData = try? JSONEncoder().encode(newValue)
         }
     }
 
