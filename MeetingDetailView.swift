@@ -44,7 +44,19 @@ struct MeetingDetailView: View {
                                     image: Image(systemName: "waveform")
                                 )
                             ) {
-                                Image(systemName: "arrow.down.circle")
+                                Image(systemName: "waveform.circle")
+                            }
+                        }
+                        // 下載逐字稿 .txt
+                        if let url = transcriptExportURL {
+                            ShareLink(
+                                item: url,
+                                preview: SharePreview(
+                                    (record.title ?? "逐字稿") + " 逐字稿",
+                                    image: Image(systemName: "doc.text")
+                                )
+                            ) {
+                                Image(systemName: "doc.text.below.ecg")
                             }
                         }
                         ShareLink(item: shareText) {
@@ -74,12 +86,15 @@ struct MeetingDetailView: View {
     // MARK: - Failed
 
     private var failedView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 60)).foregroundStyle(.red)
-            Text("處理失敗").font(.headline)
+        VStack(spacing: 24) {
+            ZStack {
+                Circle().fill(Color.morandiBrick.opacity(0.12)).frame(width: 110, height: 110)
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 54)).foregroundStyle(Color.morandiBrick)
+            }
+            Text("處理失敗").font(.title2.bold())
             if let msg = record.errorMessage {
-                Text(msg).foregroundStyle(.secondary)
+                Text(msg).foregroundStyle(Color.morandiWarmGray)
                     .multilineTextAlignment(.center).font(.callout)
             }
 
@@ -97,17 +112,18 @@ struct MeetingDetailView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 16)
                 .fontWeight(.semibold)
+                .foregroundStyle(.white)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
+            .buttonStyle(.plain)
+            .background(isRetrying ? Color.morandiDust : Color.brandCharcoal)
             .disabled(isRetrying)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal)
 
             Text("確認 API Keys 正確後再點重新分析")
-                .foregroundStyle(.tertiary).font(.caption)
+                .foregroundStyle(Color.morandiWarmGray.opacity(0.7)).font(.caption)
         }
         .padding()
     }
@@ -174,13 +190,13 @@ struct MeetingDetailView: View {
                FileManager.default.fileExists(atPath: path) {
                 AudioPlayerBar(url: URL(fileURLWithPath: path))
                     .padding(.horizontal)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 12)
                 Divider()
             }
 
             // 會議資訊標頭
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
+                HStack(spacing: 12) {
                     InfoChip(icon: "calendar",
                              text: record.startedAt.formatted(date: .abbreviated, time: .shortened))
                     if let sec = record.durationSeconds {
@@ -210,13 +226,18 @@ struct MeetingDetailView: View {
             .pickerStyle(.segmented)
             .padding()
 
-            TabView(selection: $selectedTab) {
-                summaryTab.tag(0)
-                topicsTab.tag(1)
-                nextStepsTab.tag(2)
-                transcriptTab.tag(3)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            currentTab
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private var currentTab: some View {
+        switch selectedTab {
+        case 0: summaryTab
+        case 1: topicsTab
+        case 2: nextStepsTab
+        default: transcriptTab
         }
     }
 
@@ -230,13 +251,13 @@ struct MeetingDetailView: View {
             } else {
                 List {
                     ForEach(Array(record.summaryPoints.enumerated()), id: \.offset) { i, point in
-                        HStack(alignment: .top, spacing: 14) {
+                        HStack(alignment: .top, spacing: 16) {
                             Text("\(i + 1)")
                                 .font(.caption.bold())
                                 .frame(width: 26, height: 26)
-                                .background(Color(.secondarySystemBackground))
+                                .background(Color.morandiDust)
                                 .clipShape(Circle())
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(Color.morandiWarmGray)
                             Text(point).font(.body)
                         }
                         .padding(.vertical, 4)
@@ -271,10 +292,10 @@ struct MeetingDetailView: View {
                             }
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemBackground))
+                            .background(Color.morandiSand)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .padding(.horizontal)
-                            .padding(.vertical, 6)
+                            .padding(.vertical, 8)
                         }
                     }
                     .padding(.vertical, 8)
@@ -324,22 +345,22 @@ struct MeetingDetailView: View {
                 toggleStep(id: step.id)
             } label: {
                 Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(step.isCompleted ? .green : .secondary)
+                    .foregroundStyle(step.isCompleted ? Color.morandiSage : Color.morandiWarmGray)
                     .font(.title3)
                     .animation(.spring(duration: 0.2), value: step.isCompleted)
             }
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Text(step.description)
                         .strikethrough(step.isCompleted)
                         .foregroundStyle(step.isCompleted ? .secondary : .primary)
                     if let p = step.priority, !step.isCompleted {
                         Text(p)
                             .font(.caption2.bold())
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
                             .background(priorityColor(p).opacity(0.15))
                             .foregroundStyle(priorityColor(p))
                             .clipShape(Capsule())
@@ -360,9 +381,9 @@ struct MeetingDetailView: View {
 
     private func priorityColor(_ priority: String) -> Color {
         switch priority {
-        case "高": return .red
-        case "中": return .orange
-        default:   return .secondary
+        case "高": return .morandiBrick
+        case "中": return .morandiTerracotta
+        default:   return .morandiWarmGray
         }
     }
 
@@ -377,14 +398,70 @@ struct MeetingDetailView: View {
     // MARK: - Transcript tab
 
     private var transcriptTab: some View {
-        ScrollView {
-            Text(record.transcript?.isEmpty == false ? record.transcript! : "無逐字稿")
-                .font(.body)
-                .lineSpacing(6)
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
+        Group {
+            if transcriptSegments.isEmpty {
+                ContentUnavailableView("無逐字稿", systemImage: "doc.text",
+                    description: Text("此會議沒有逐字稿資料"))
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(transcriptSegments) { seg in
+                            VStack(alignment: .leading, spacing: 4) {
+                                if let speaker = seg.speaker {
+                                    Text(speaker)
+                                        .font(.caption.bold())
+                                        .foregroundStyle(Color.morandiTerracotta)
+                                }
+                                Text(seg.text)
+                                    .font(.body)
+                                    .lineSpacing(4)
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            Divider().padding(.leading, 16)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+            }
         }
+    }
+
+    // 將逐字稿解析成 speaker segments，每個 segment 獨立渲染（LazyVStack 懶加載）
+    private var transcriptSegments: [TranscriptSegment] {
+        guard let raw = record.transcript, !raw.isEmpty else { return [] }
+        let lines = raw.components(separatedBy: "\n")
+        var segments: [TranscriptSegment] = []
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { continue }
+            // 格式：[說話者 A] 文字內容
+            if trimmed.hasPrefix("["),
+               let closeBracket = trimmed.firstIndex(of: "]") {
+                let speaker = String(trimmed[trimmed.index(after: trimmed.startIndex)..<closeBracket])
+                let rest = trimmed[trimmed.index(after: closeBracket)...].trimmingCharacters(in: .whitespaces)
+                segments.append(TranscriptSegment(speaker: speaker, text: rest.isEmpty ? " " : rest))
+            } else {
+                segments.append(TranscriptSegment(speaker: nil, text: trimmed))
+            }
+        }
+        return segments
+    }
+
+    // MARK: - Transcript export
+
+    /// 將逐字稿寫入暫存 .txt 檔，供 ShareLink 下載
+    private var transcriptExportURL: URL? {
+        guard let text = record.transcript, !text.isEmpty else { return nil }
+        let title = (record.title ?? "逐字稿")
+            .components(separatedBy: .whitespacesAndNewlines).joined(separator: "_")
+        let date = record.startedAt.formatted(.dateTime.year().month().day())
+        let filename = "\(title)_逐字稿_\(date).txt"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        try? text.write(to: url, atomically: true, encoding: .utf8)
+        return url
     }
 
     // MARK: - Share text
@@ -446,6 +523,14 @@ struct MeetingDetailView: View {
     }
 }
 
+// MARK: - Transcript Segment
+
+struct TranscriptSegment: Identifiable {
+    let id = UUID()
+    let speaker: String?
+    let text: String
+}
+
 // MARK: - InfoChip
 
 struct InfoChip: View {
@@ -454,12 +539,12 @@ struct InfoChip: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: icon).font(.caption2).foregroundStyle(.secondary)
-            Text(text).font(.caption).foregroundStyle(.secondary)
+            Image(systemName: icon).font(.caption2).foregroundStyle(Color.morandiWarmGray)
+            Text(text).font(.caption).foregroundStyle(Color.morandiWarmGray)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Color(.secondarySystemBackground))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+        .background(Color.morandiDust)
         .clipShape(Capsule())
     }
 }
@@ -583,9 +668,9 @@ struct SpeakerEditorView: View {
                             let rank = (orderedLabels.firstIndex(of: label) ?? 0) + 1
                             Text("\(rank)")
                                 .font(.caption.bold())
-                                .frame(width: 24, height: 24)
-                                .background(rank == 1 ? Color.orange.opacity(0.15) : Color(.secondarySystemBackground))
-                                .foregroundStyle(rank == 1 ? .orange : .secondary)
+                                .frame(width: 28, height: 28)
+                                .background(rank == 1 ? Color.morandiTerracotta.opacity(0.18) : Color.morandiDust)
+                                .foregroundStyle(rank == 1 ? Color.morandiTerracotta : Color.morandiWarmGray)
                                 .clipShape(Circle())
 
                             Text("說話者 \(label)")
@@ -611,10 +696,10 @@ struct SpeakerEditorView: View {
                 } header: {
                     Text("說話者名稱與發言權重")
                 } footer: {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Label("第 1 位的發言在歧見時優先採納", systemImage: "arrow.up.circle")
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Color.morandiTerracotta)
                         if names.values.contains(where: { !$0.isEmpty }) {
                             Label("已預填的名稱由 AI 從逐字稿推測，請確認是否正確", systemImage: "sparkles")
                                 .font(.caption)
@@ -629,7 +714,7 @@ struct SpeakerEditorView: View {
                 if let msg = errorMessage {
                     Section {
                         Text(msg)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color.morandiBrick)
                             .font(.callout)
                     }
                 }
@@ -651,7 +736,7 @@ struct SpeakerEditorView: View {
                         }
                     }
                     .foregroundStyle(.white)
-                    .listRowBackground(isReanalyzing ? Color(.systemGray4) : Color(white: 0.1))
+                    .listRowBackground(isReanalyzing ? Color.morandiDust : Color.brandCharcoal)
                     .disabled(isReanalyzing || !hasAnyName)
                 }
             }

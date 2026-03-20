@@ -56,11 +56,18 @@ final class AIService {
         request.httpMethod = "POST"
         request.setValue(apiKey, forHTTPHeaderField: "Authorization")
         request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try Data(contentsOf: fileURL)
+        request.timeoutInterval = 600 // 10 分鐘，大檔案上傳用
 
+        // 用 upload(for:fromFile:) 串流上傳，避免將整個音檔載入記憶體
         let (data, response): (Data, URLResponse)
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
+            let session = URLSession(configuration: {
+                let c = URLSessionConfiguration.default
+                c.timeoutIntervalForRequest = 600
+                c.timeoutIntervalForResource = 1800
+                return c
+            }())
+            (data, response) = try await session.upload(for: request, fromFile: fileURL)
         } catch {
             throw AIError.networkError(error)
         }
@@ -113,8 +120,8 @@ final class AIService {
         var request = URLRequest(url: URL(string: "https://api.assemblyai.com/v2/transcript/\(id)")!)
         request.setValue(apiKey, forHTTPHeaderField: "Authorization")
 
-        // 最多等 15 分鐘（180 次 × 5 秒）
-        for _ in 0..<180 {
+        // 最多等 30 分鐘（360 次 × 5 秒），應對長會議音檔
+        for _ in 0..<360 {
             try await Task.sleep(nanoseconds: 5_000_000_000)
 
             let (data, _): (Data, URLResponse)
@@ -150,7 +157,7 @@ final class AIService {
             }
         }
 
-        throw AIError.transcriptionFailed("辨識逾時，請確認音檔長度不超過 2 小時")
+        throw AIError.transcriptionFailed("辨識逾時，請確認音檔長度不超過 3 小時")
     }
 
     // MARK: - 會議摘要（Claude API）
@@ -260,7 +267,7 @@ final class AIService {
 
         let requestBody: [String: Any] = [
             "model": "claude-haiku-4-5-20251001",
-            "max_tokens": 3000,
+            "max_tokens": 8096,
             "messages": [["role": "user", "content": prompt]]
         ]
 

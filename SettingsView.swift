@@ -35,7 +35,7 @@ struct SettingsView: View {
                 }
 
                 if let errorMessage {
-                    Section { Text(errorMessage).foregroundStyle(.red).font(.callout) }
+                    Section { Text(errorMessage).foregroundStyle(Color.morandiBrick).font(.callout) }
                 }
 
                 Section {
@@ -43,7 +43,7 @@ struct SettingsView: View {
                         save()
                     }
                     .disabled(assemblyaiKey.isEmpty && claudeKey.isEmpty)
-                    .foregroundStyle(isSaved ? .green : .red)
+                    .foregroundStyle(isSaved ? Color.morandiSage : Color.brandCharcoal)
                 }
 
                 Section {

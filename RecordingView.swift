@@ -255,6 +255,7 @@ struct RecordingView: View {
     @StateObject private var vm = RecordingViewModel()
     @ObservedObject private var recorder = AudioRecordingManager.shared
     @State private var showingFileImporter = false
+    @State private var recBlink = false
 
     var body: some View {
         NavigationStack {
@@ -263,7 +264,8 @@ struct RecordingView: View {
                 phaseContent
                 Spacer()
             }
-            .padding(.horizontal, 28)
+            .padding(.horizontal, 20)
+            .background(Color.morandiLinen.ignoresSafeArea())
             .navigationTitle(navTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -291,7 +293,7 @@ struct RecordingView: View {
                 isPresented: $vm.showStopConfirm,
                 titleVisibility: .visible
             ) {
-                Button("停止並產生摘要", role: .destructive) {
+                Button("停止並產生摘要") {
                     Task { await vm.stopAndProcess(modelContext: modelContext) }
                 }
                 Button("繼續錄音", role: .cancel) {}
@@ -323,14 +325,14 @@ struct RecordingView: View {
             recordingView
         case .transcribing:
             processingView(
-                icon: "waveform", color: .blue,
-                title: "語音轉文字中...",
+                icon: "waveform",
+                title: "步驟 1／2　語音轉文字",
                 subtitle: "正在將錄音轉換成逐字稿"
             )
         case .summarizing:
             processingView(
-                icon: "sparkles", color: .purple,
-                title: "產生摘要中...",
+                icon: "sparkles",
+                title: "步驟 2／2　AI 分析",
                 subtitle: "AI 正在分析會議重點，完成後會發送通知"
             )
         case .complete(let record):
@@ -343,22 +345,22 @@ struct RecordingView: View {
     // MARK: - Idle
 
     private var idleView: some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 24) {
             Image(systemName: "mic.circle")
                 .font(.system(size: 90))
-                .foregroundStyle(.red.opacity(0.8))
+                .foregroundStyle(Color.morandiTerracotta)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("會議名稱（選填）")
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.morandiWarmGray)
                 TextField("例如：產品週會、Q2 預算討論", text: $vm.meetingTitle)
                     .padding(12)
-                    .background(Color(.secondarySystemBackground))
+                    .background(Color.morandiSand)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 Text("不填的話，AI 會根據內容自動命名")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color.morandiWarmGray.opacity(0.7))
             }
 
             Button {
@@ -371,8 +373,8 @@ struct RecordingView: View {
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
-            .background(Color(white: 0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .background(Color.brandCharcoal)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
 
             Button {
                 showingFileImporter = true
@@ -381,14 +383,14 @@ struct RecordingView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.morandiWarmGray)
             }
             .buttonStyle(.plain)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .background(Color.morandiSand)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
 
             if let err = vm.errorMessage {
-                Text(err).foregroundStyle(.red).font(.callout).multilineTextAlignment(.center)
+                Text(err).foregroundStyle(Color.morandiBrick).font(.callout).multilineTextAlignment(.center)
             }
         }
     }
@@ -396,33 +398,38 @@ struct RecordingView: View {
     // MARK: - Recording
 
     private var recordingView: some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 24) {
             ZStack {
                 ForEach([0, 1, 2], id: \.self) { i in
                     Circle()
-                        .fill(.red.opacity(0.06 - Double(i) * 0.015))
+                        .fill(Color.morandiTerracotta.opacity(0.06 - Double(i) * 0.015))
                         .frame(width: 130 + CGFloat(i) * 25, height: 130 + CGFloat(i) * 25)
                         .scaleEffect(1 + CGFloat(recorder.audioLevel) * 0.25)
                         .animation(.easeOut(duration: 0.08), value: recorder.audioLevel)
                 }
-                Circle().fill(.red).frame(width: 120, height: 120)
+                Circle().fill(Color.morandiTerracotta).frame(width: 120, height: 120)
                 Image(systemName: "mic.fill")
                     .font(.system(size: 46)).foregroundStyle(.white)
             }
             .frame(width: 220, height: 220)
 
             Text(recorder.elapsedSeconds.formattedDuration)
-                .font(.system(size: 54, weight: .thin, design: .monospaced))
+                .font(.system(size: 48, weight: .thin, design: .monospaced))
 
             if !vm.meetingTitle.isEmpty {
                 Text(vm.meetingTitle)
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(Color.morandiWarmGray)
             }
 
             HStack(spacing: 6) {
-                Circle().fill(.red).frame(width: 8, height: 8)
-                    .opacity(recorder.elapsedSeconds % 2 == 0 ? 1 : 0.2)
-                Text("REC").font(.caption.bold()).foregroundStyle(.red)
+                Circle().fill(Color.morandiTerracotta).frame(width: 8, height: 8)
+                    .opacity(recBlink ? 1 : 0.2)
+                Text("REC").font(.caption.bold()).foregroundStyle(Color.morandiTerracotta)
+            }
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+                    recBlink = true
+                }
             }
 
             Button { vm.requestStop() } label: {
@@ -430,25 +437,26 @@ struct RecordingView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .fontWeight(.semibold)
+                    .foregroundStyle(.white)
             }
-            .buttonStyle(.bordered)
-            .tint(.red)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .buttonStyle(.plain)
+            .background(Color.brandCharcoal)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
 
     // MARK: - Processing
 
-    private func processingView(icon: String, color: Color, title: String, subtitle: String) -> some View {
+    private func processingView(icon: String, title: String, subtitle: String) -> some View {
         VStack(spacing: 24) {
             ZStack {
-                Circle().fill(color.opacity(0.1)).frame(width: 110, height: 110)
-                Image(systemName: icon).font(.system(size: 48)).foregroundStyle(color)
+                Circle().fill(Color.morandiDust).frame(width: 110, height: 110)
+                Image(systemName: icon).font(.system(size: 48)).foregroundStyle(.primary)
             }
-            ProgressView().scaleEffect(1.3)
+            ProgressView().scaleEffect(1.3).tint(Color.morandiWarmGray)
             VStack(spacing: 8) {
                 Text(title).font(.title3.weight(.medium))
-                Text(subtitle).font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                Text(subtitle).font(.callout).foregroundStyle(Color.morandiWarmGray).multilineTextAlignment(.center)
             }
         }
     }
@@ -456,16 +464,27 @@ struct RecordingView: View {
     // MARK: - Complete
 
     private func completeView(record: MeetingRecord) -> some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             ZStack {
-                Circle().fill(.green.opacity(0.1)).frame(width: 110, height: 110)
-                Image(systemName: "checkmark.circle.fill").font(.system(size: 68)).foregroundStyle(.green)
+                Circle().fill(Color.morandiSage.opacity(0.15)).frame(width: 110, height: 110)
+                Image(systemName: "checkmark.circle.fill").font(.system(size: 68)).foregroundStyle(Color.morandiSage)
             }
             VStack(spacing: 8) {
-                Text("完成！").font(.title.bold())
+                Text("完成！").font(.title2.bold())
                 Text(record.title ?? "會議摘要已產生")
-                    .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    .font(.subheadline).foregroundStyle(Color.morandiWarmGray).multilineTextAlignment(.center)
             }
+            NavigationLink(destination: MeetingDetailView(record: record)) {
+                Text("查看摘要")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+            .background(Color.brandCharcoal)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+
             Button {
                 dismiss()
             } label: {
@@ -473,167 +492,53 @@ struct RecordingView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.morandiWarmGray)
             }
             .buttonStyle(.plain)
-            .background(Color(white: 0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .background(Color.morandiSand)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
 
     // MARK: - Failed
 
     private func failedView(message: String) -> some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             ZStack {
-                Circle().fill(.red.opacity(0.1)).frame(width: 110, height: 110)
-                Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 54)).foregroundStyle(.red)
+                Circle().fill(Color.morandiBrick.opacity(0.12)).frame(width: 110, height: 110)
+                Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 54)).foregroundStyle(Color.morandiBrick)
             }
             VStack(spacing: 8) {
-                Text("分析失敗").font(.title.bold())
-                Text(message).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                Text("分析失敗").font(.title2.bold())
+                Text(message).foregroundStyle(Color.morandiWarmGray).multilineTextAlignment(.center)
             }
 
             if vm.failedRecord != nil {
                 Text("錄音已保存，修正問題後可直接重新分析")
-                    .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    .font(.caption).foregroundStyle(Color.morandiWarmGray).multilineTextAlignment(.center)
 
                 Button {
                     Task { await vm.retryFailed(modelContext: modelContext) }
                 } label: {
                     Label("重新分析", systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 16)
                         .fontWeight(.semibold)
+                        .foregroundStyle(.white)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .buttonStyle(.plain)
+                .background(Color.brandCharcoal)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
             }
 
             Button("關閉") { dismiss() }
-                .buttonStyle(.bordered)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .buttonStyle(.plain)
+                .padding(.vertical, 16)
+                .frame(maxWidth: .infinity)
+                .background(Color.morandiSand)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .foregroundStyle(Color.morandiWarmGray)
         }
     }
 }
 
-// MARK: - Siri Orb
-
-struct SiriOrbView: View {
-    enum OrbState {
-        case idle, recording, processing
-
-        var speed: Double {
-            switch self {
-            case .idle:       return 0.35
-            case .recording:  return 1.6
-            case .processing: return 0.75
-            }
-        }
-    }
-
-    let orbState: OrbState
-
-    var body: some View {
-        if #available(iOS 18.0, *) {
-            SiriOrbCoreView(orbState: orbState)
-        } else {
-            // iOS 18 以下的 fallback：簡單的橘紫漸層圓
-            Circle()
-                .fill(
-                    AngularGradient(
-                        colors: [.orange, .purple, .pink, .orange],
-                        center: .center
-                    )
-                )
-                .blur(radius: 3)
-        }
-    }
-}
-
-@available(iOS 18.0, *)
-private struct SiriOrbCoreView: View {
-    let orbState: SiriOrbView.OrbState
-
-    var body: some View {
-        TimelineView(.animation) { context in
-            let t = Float(context.date.timeIntervalSinceReferenceDate * orbState.speed)
-            orbFrame(t: t)
-        }
-    }
-
-    private func orbFrame(t: Float) -> some View {
-        let cx = 0.3 + 0.35 * sin(t * 0.8)
-        let cy = 0.3 + 0.35 * cos(t * 0.6)
-        let cx2 = 0.6 + 0.25 * sin(t * 0.5 + 1.2)
-        let cy2 = 0.65 + 0.25 * cos(t * 0.7 + 0.8)
-
-        return ZStack {
-            MeshGradient(
-                width: 3,
-                height: 3,
-                points: [
-                    [0, 0],  [0.5, 0],  [1, 0],
-                    [0, 0.5],[Float(cx), Float(cy)],[1, 0.5],
-                    [0, 1],  [Float(cx2), Float(cy2)],[1, 1]
-                ],
-                colors: [
-                    Color(hue: 0.08,  saturation: 1.0, brightness: 1.0),
-                    Color(hue: 0.12,  saturation: 0.8, brightness: 1.0),
-                    Color(hue: 0.78,  saturation: 0.7, brightness: 0.9),
-                    Color(hue: 0.06,  saturation: 1.0, brightness: 0.9),
-                    Color(hue: 0.10 + 0.06 * Double(sin(t * 0.5)), saturation: 0.5, brightness: 1.0),
-                    Color(hue: 0.82,  saturation: 0.65, brightness: 0.88),
-                    Color(hue: 0.05,  saturation: 0.95, brightness: 0.85),
-                    Color(hue: 0.60,  saturation: 0.5,  brightness: 0.88),
-                    Color(hue: 0.85 + 0.05 * Double(sin(t * 0.4)), saturation: 0.7, brightness: 0.9)
-                ]
-            )
-
-            // 左上高光，製造球面感
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [.white.opacity(0.55), .clear],
-                        center: UnitPoint(x: 0.32, y: 0.28),
-                        startRadius: 0,
-                        endRadius: 45
-                    )
-                )
-                .blendMode(.screen)
-        }
-        .clipShape(Circle())
-        .shadow(color: Color.orange.opacity(0.4), radius: 14)
-    }
-}
-
-// MARK: - Shimmer Text
-
-struct ShimmerText: View {
-    let text: String
-    var font: Font = .body
-    @State private var phase: CGFloat = 0
-
-    var body: some View {
-        Text(text)
-            .font(font)
-            .overlay {
-                GeometryReader { geo in
-                    LinearGradient(
-                        colors: [.clear, .white.opacity(0.85), .clear],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    .frame(width: geo.size.width * 0.45)
-                    .offset(x: -geo.size.width * 0.5 + phase * geo.size.width * 1.8)
-                }
-                .mask { Text(text).font(font) }
-            }
-            .onAppear {
-                withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
-                    phase = 1
-                }
-            }
-    }
-}

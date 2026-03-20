@@ -23,15 +23,15 @@ struct LoginView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "mic.circle.fill")
                         .font(.system(size: 72))
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.brandCharcoal)
                     Text("會議記錄助理")
                         .font(.title.bold())
                     Text("錄音結束後，自動產出\n摘要、行動項目與逐字稿")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.morandiWarmGray)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.top, 52)
+                .padding(.top, 48)
                 .padding(.bottom, 40)
                 .padding(.horizontal, 24)
 
@@ -40,7 +40,6 @@ struct LoginView: View {
 
                     FieldCard(
                         icon: "envelope.fill",
-                        iconColor: .blue,
                         title: "電子信箱",
                         hint: "用來在 App 內顯示你的名稱，不會傳送到任何伺服器，純粹作為個人識別用途。"
                     ) {
@@ -52,7 +51,6 @@ struct LoginView: View {
 
                     FieldCard(
                         icon: "person.wave.2.fill",
-                        iconColor: .green,
                         title: "AssemblyAI API Key",
                         hint: "用於將錄音轉成文字，並自動辨識會議中不同人的聲音（說話者辨識）。\n\n費用由你的 AssemblyAI 帳戶自行負擔，每小時約 $0.37 美金。\n\n申請方式：前往 assemblyai.com → 登入後右上角點帳號 → API Keys"
                     ) {
@@ -70,7 +68,7 @@ struct LoginView: View {
                                 showAssemblyAIKey.toggle()
                             } label: {
                                 Image(systemName: showAssemblyAIKey ? "eye.slash" : "eye")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.morandiWarmGray)
                                     .font(.callout)
                             }
                             .buttonStyle(.plain)
@@ -79,7 +77,6 @@ struct LoginView: View {
 
                     FieldCard(
                         icon: "text.bubble.fill",
-                        iconColor: .purple,
                         title: "Claude API Key",
                         hint: "用於分析逐字稿，自動產生 10 大重點和行動項目。\n\n費用由你的 Anthropic 帳戶自行負擔，每次摘要約 $0.05 美金。\n\n申請方式：前往 console.anthropic.com → API Keys → Create Key"
                     ) {
@@ -97,7 +94,7 @@ struct LoginView: View {
                                 showClaudeKey.toggle()
                             } label: {
                                 Image(systemName: showClaudeKey ? "eye.slash" : "eye")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.morandiWarmGray)
                                     .font(.callout)
                             }
                             .buttonStyle(.plain)
@@ -108,14 +105,14 @@ struct LoginView: View {
                     if let errorMessage {
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.red)
+                                .foregroundStyle(Color.morandiBrick)
                             Text(errorMessage)
                                 .font(.callout)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(Color.morandiBrick)
                         }
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.red.opacity(0.08))
+                        .background(Color.morandiBrick.opacity(0.08))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
 
@@ -136,22 +133,23 @@ struct LoginView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
+                        .foregroundStyle(.white)
+                        .background(canSubmit && !isLoading ? Color.brandCharcoal : Color.morandiDust)
+                        .clipShape(Capsule())
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
+                    .buttonStyle(.plain)
                     .disabled(!canSubmit || isLoading)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
 
                     Text("你的 API Keys 只存在你的手機裡，不會傳送到任何第三方伺服器。")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.morandiWarmGray)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 48)
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(Color.morandiLinen.ignoresSafeArea())
     }
 
     private func submit() async {
@@ -207,7 +205,6 @@ struct LoginView: View {
 
 struct FieldCard<Content: View>: View {
     let icon: String
-    let iconColor: Color
     let title: String
     let hint: String
     @ViewBuilder let content: () -> Content
@@ -218,7 +215,7 @@ struct FieldCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .foregroundStyle(iconColor)
+                    .foregroundStyle(Color.brandCharcoal)
                     .frame(width: 20)
                 Text(title)
                     .font(.subheadline.weight(.semibold))
@@ -227,25 +224,29 @@ struct FieldCard<Content: View>: View {
                     withAnimation(.spring(duration: 0.25)) { showHint.toggle() }
                 } label: {
                     Image(systemName: showHint ? "questionmark.circle.fill" : "questionmark.circle")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.morandiWarmGray)
                 }
             }
 
             if showHint {
                 Text(hint)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.morandiWarmGray)
                     .fixedSize(horizontal: false, vertical: true)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
             content()
                 .padding(12)
-                .background(Color(.systemBackground))
+                .background(Color.morandiSand)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color.morandiSand)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.morandiDust, lineWidth: 1)
+        )
     }
 }
