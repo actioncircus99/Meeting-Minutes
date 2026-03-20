@@ -23,6 +23,16 @@ struct MeetingDetailView: View {
         }
         .navigationTitle(record.title ?? "會議詳情")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(
+            LinearGradient(
+                colors: [Color.brand, Color.brandLight],
+                startPoint: .leading,
+                endPoint: .trailing
+            ),
+            for: .navigationBar
+        )
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             if record.status == .complete {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -34,7 +44,6 @@ struct MeetingDetailView: View {
                                 Image(systemName: "person.2")
                             }
                         }
-                        // 下載錄音檔
                         if let path = record.audioFilePath,
                            FileManager.default.fileExists(atPath: path) {
                             ShareLink(
@@ -47,7 +56,6 @@ struct MeetingDetailView: View {
                                 Image(systemName: "waveform.circle")
                             }
                         }
-                        // 下載逐字稿 .txt
                         if let url = transcriptExportURL {
                             ShareLink(
                                 item: url,
@@ -74,58 +82,64 @@ struct MeetingDetailView: View {
     // MARK: - Processing
 
     private var processingView: some View {
-        VStack(spacing: 20) {
-            ProgressView().scaleEffect(2).padding()
-            Text("分析中...").font(.title3)
-            Text("完成後會發送通知給你，可先離開此畫面")
-                .foregroundStyle(.secondary).multilineTextAlignment(.center)
+        ZStack {
+            Color.appBg.ignoresSafeArea()
+            VStack(spacing: 20) {
+                ProgressView().scaleEffect(2).padding()
+                Text("分析中...").font(.title3).foregroundStyle(Color.inkDark)
+                Text("完成後會發送通知給你，可先離開此畫面")
+                    .foregroundStyle(Color.inkGray).multilineTextAlignment(.center)
+            }
+            .padding()
         }
-        .padding()
     }
 
     // MARK: - Failed
 
     private var failedView: some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle().fill(Color.morandiBrick.opacity(0.12)).frame(width: 110, height: 110)
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 54)).foregroundStyle(Color.morandiBrick)
-            }
-            Text("處理失敗").font(.title2.bold())
-            if let msg = record.errorMessage {
-                Text(msg).foregroundStyle(Color.morandiWarmGray)
-                    .multilineTextAlignment(.center).font(.callout)
-            }
-
-            Button {
-                Task { await retryAnalysis() }
-            } label: {
-                Group {
-                    if isRetrying {
-                        HStack(spacing: 8) {
-                            ProgressView().tint(.white)
-                            Text("重新分析中...")
-                        }
-                    } else {
-                        Label("重新分析", systemImage: "arrow.clockwise")
-                    }
+        ZStack {
+            Color.appBg.ignoresSafeArea()
+            VStack(spacing: 24) {
+                ZStack {
+                    Circle().fill(Color.morandiBrick.opacity(0.12)).frame(width: 110, height: 110)
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 54)).foregroundStyle(Color.morandiBrick)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .fontWeight(.semibold)
-                .foregroundStyle(.white)
-            }
-            .buttonStyle(.plain)
-            .background(isRetrying ? Color.morandiDust : Color.brandCharcoal)
-            .disabled(isRetrying)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .padding(.horizontal)
+                Text("處理失敗").font(.title2.bold()).foregroundStyle(Color.inkDark)
+                if let msg = record.errorMessage {
+                    Text(msg).foregroundStyle(Color.inkGray)
+                        .multilineTextAlignment(.center).font(.callout)
+                }
 
-            Text("確認 API Keys 正確後再點重新分析")
-                .foregroundStyle(Color.morandiWarmGray.opacity(0.7)).font(.caption)
+                Button {
+                    Task { await retryAnalysis() }
+                } label: {
+                    Group {
+                        if isRetrying {
+                            HStack(spacing: 8) {
+                                ProgressView().tint(.white)
+                                Text("重新分析中...")
+                            }
+                        } else {
+                            Label("重新分析", systemImage: "arrow.clockwise")
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+                .background(isRetrying ? Color.borderGray : Color.ctaDark)
+                .disabled(isRetrying)
+                .clipShape(Capsule())
+                .padding(.horizontal)
+
+                Text("確認 API Keys 正確後再點重新分析")
+                    .foregroundStyle(Color.inkGray.opacity(0.7)).font(.caption)
+            }
+            .padding()
         }
-        .padding()
     }
 
     private func retryAnalysis() async {
@@ -184,50 +198,55 @@ struct MeetingDetailView: View {
     // MARK: - Result
 
     private var resultView: some View {
-        VStack(spacing: 0) {
-            // 音訊播放器
-            if let path = record.audioFilePath,
-               FileManager.default.fileExists(atPath: path) {
-                AudioPlayerBar(url: URL(fileURLWithPath: path))
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-                Divider()
-            }
+        ZStack {
+            Color.appBg.ignoresSafeArea()
 
-            // 會議資訊標頭
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    InfoChip(icon: "calendar",
-                             text: record.startedAt.formatted(date: .abbreviated, time: .shortened))
-                    if let sec = record.durationSeconds {
-                        InfoChip(icon: "clock", text: sec.formattedDuration)
-                    }
-                    InfoChip(icon: "checkmark.seal",
-                             text: "\(record.summaryPoints.count) 個結論")
-                    if !record.nextSteps.isEmpty {
-                        InfoChip(icon: "checklist",
-                                 text: "\(record.nextSteps.filter { !$0.isCompleted }.count) 項待辦")
-                    }
-                    if !record.speakerNames.isEmpty {
-                        InfoChip(icon: "person.2",
-                                 text: "\(record.speakerNames.count) 位已命名")
-                    }
+            VStack(spacing: 0) {
+                // Audio Player Card
+                if let path = record.audioFilePath,
+                   FileManager.default.fileExists(atPath: path) {
+                    AudioPlayerBar(url: URL(fileURLWithPath: path))
+                        .padding(16)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                        .padding(.bottom, 12)
                 }
-                .padding(.horizontal)
-            }
-            .padding(.top, 8)
 
-            Picker("", selection: $selectedTab) {
-                Text("結論").tag(0)
-                Text("討論摘要").tag(1)
-                Text("行動項目").tag(2)
-                Text("逐字稿").tag(3)
-            }
-            .pickerStyle(.segmented)
-            .padding()
+                // Info Chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        InfoChip(icon: "calendar",
+                                 text: record.startedAt.formatted(date: .abbreviated, time: .shortened))
+                        if let sec = record.durationSeconds {
+                            InfoChip(icon: "clock", text: sec.formattedDuration)
+                        }
+                        InfoChip(icon: "checkmark.seal",
+                                 text: "\(record.summaryPoints.count) 個結論")
+                        if !record.nextSteps.isEmpty {
+                            InfoChip(icon: "checklist",
+                                     text: "\(record.nextSteps.filter { !$0.isCompleted }.count) 項待辦")
+                        }
+                        if !record.speakerNames.isEmpty {
+                            InfoChip(icon: "person.2",
+                                     text: "\(record.speakerNames.count) 位已命名")
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+                .padding(.bottom, 12)
 
-            currentTab
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Custom Tab Picker
+                MeetingTabPicker(selected: $selectedTab,
+                                 tabs: ["結論", "討論摘要", "行動項目", "逐字稿"])
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+
+                currentTab
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
     }
 
@@ -249,21 +268,29 @@ struct MeetingDetailView: View {
                 ContentUnavailableView("無會議結論", systemImage: "checkmark.seal",
                     description: Text("重新分析後即可顯示"))
             } else {
-                List {
-                    ForEach(Array(record.summaryPoints.enumerated()), id: \.offset) { i, point in
-                        HStack(alignment: .top, spacing: 16) {
-                            Text("\(i + 1)")
-                                .font(.caption.bold())
-                                .frame(width: 26, height: 26)
-                                .background(Color.morandiDust)
-                                .clipShape(Circle())
-                                .foregroundStyle(Color.morandiWarmGray)
-                            Text(point).font(.body)
+                ScrollView {
+                    VStack(spacing: 12) {
+                        ForEach(Array(record.summaryPoints.enumerated()), id: \.offset) { i, point in
+                            HStack(alignment: .top, spacing: 12) {
+                                Text("\(i + 1)")
+                                    .font(.caption.bold())
+                                    .frame(width: 28, height: 28)
+                                    .background(Color.infoBg)
+                                    .foregroundStyle(Color.brand)
+                                    .clipShape(Circle())
+                                Text(point)
+                                    .font(.body)
+                                    .foregroundStyle(Color.inkDark)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .padding(16)
+                            .background(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                        .padding(.vertical, 4)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
                 }
-                .listStyle(.plain)
             }
         }
     }
@@ -277,28 +304,25 @@ struct MeetingDetailView: View {
                     description: Text("重新分析後即可顯示"))
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 0) {
+                    VStack(spacing: 12) {
                         ForEach(record.topics) { topic in
                             VStack(alignment: .leading, spacing: 8) {
-                                HStack(spacing: 8) {
-                                    Text("🔶")
-                                    Text(topic.title)
-                                        .font(.headline)
-                                }
+                                Text(topic.title)
+                                    .font(.headline)
+                                    .foregroundStyle(Color.brand)
                                 Text(topic.summary)
                                     .font(.body)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.inkGray)
                                     .lineSpacing(4)
                             }
-                            .padding()
+                            .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.morandiSand)
+                            .background(.white)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal)
-                            .padding(.vertical, 8)
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
                 }
             }
         }
@@ -315,28 +339,46 @@ struct MeetingDetailView: View {
                     description: Text("這場會議沒有提取到具體的行動項目")
                 )
             } else {
-                List {
-                    let pending = record.nextSteps.filter { !$0.isCompleted }
-                    let done    = record.nextSteps.filter { $0.isCompleted }
+                ScrollView {
+                    VStack(spacing: 0) {
+                        let pending = record.nextSteps.filter { !$0.isCompleted }
+                        let done    = record.nextSteps.filter { $0.isCompleted }
 
-                    if !pending.isEmpty {
-                        Section("待完成（\(pending.count)）") {
-                            ForEach(pending) { step in
-                                nextStepRow(step: step)
+                        if !pending.isEmpty {
+                            sectionHeader("待完成（\(pending.count)）")
+                            VStack(spacing: 1) {
+                                ForEach(pending) { step in nextStepRow(step: step) }
                             }
+                            .background(Color.borderGray)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 16)
+                        }
+
+                        if !done.isEmpty {
+                            sectionHeader("已完成（\(done.count)）")
+                            VStack(spacing: 1) {
+                                ForEach(done) { step in nextStepRow(step: step) }
+                            }
+                            .background(Color.borderGray)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 16)
                         }
                     }
-                    if !done.isEmpty {
-                        Section("已完成（\(done.count)）") {
-                            ForEach(done) { step in
-                                nextStepRow(step: step)
-                            }
-                        }
-                    }
+                    .padding(.bottom, 16)
                 }
-                .listStyle(.insetGrouped)
             }
         }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.inkGray)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
     }
 
     private func nextStepRow(step: NextStepItem) -> some View {
@@ -345,7 +387,7 @@ struct MeetingDetailView: View {
                 toggleStep(id: step.id)
             } label: {
                 Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(step.isCompleted ? Color.morandiSage : Color.morandiWarmGray)
+                    .foregroundStyle(step.isCompleted ? Color.morandiSage : Color.borderGray)
                     .font(.title3)
                     .animation(.spring(duration: 0.2), value: step.isCompleted)
             }
@@ -355,35 +397,40 @@ struct MeetingDetailView: View {
                 HStack(spacing: 8) {
                     Text(step.description)
                         .strikethrough(step.isCompleted)
-                        .foregroundStyle(step.isCompleted ? .secondary : .primary)
+                        .foregroundStyle(step.isCompleted ? Color.inkGray : Color.inkDark)
                     if let p = step.priority, !step.isCompleted {
                         Text(p)
                             .font(.caption2.bold())
                             .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(priorityColor(p).opacity(0.15))
+                            .padding(.vertical, 3)
+                            .background(priorityColor(p).opacity(0.12))
                             .foregroundStyle(priorityColor(p))
                             .clipShape(Capsule())
                     }
                 }
                 HStack(spacing: 12) {
                     if let a = step.assignee {
-                        Label(a, systemImage: "person.fill").font(.caption).foregroundStyle(.secondary)
+                        Label(a, systemImage: "person.fill")
+                            .font(.caption).foregroundStyle(Color.inkGray)
                     }
                     if let d = step.dueDate {
-                        Label(d, systemImage: "calendar").font(.caption).foregroundStyle(.secondary)
+                        Label(d, systemImage: "calendar")
+                            .font(.caption).foregroundStyle(Color.inkGray)
                     }
                 }
             }
+
+            Spacer()
         }
-        .padding(.vertical, 2)
+        .padding(14)
+        .background(.white)
     }
 
     private func priorityColor(_ priority: String) -> Color {
         switch priority {
         case "高": return .morandiBrick
         case "中": return .morandiTerracotta
-        default:   return .morandiWarmGray
+        default:   return .inkGray
         }
     }
 
@@ -406,21 +453,32 @@ struct MeetingDetailView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(transcriptSegments) { seg in
-                            VStack(alignment: .leading, spacing: 4) {
-                                if let speaker = seg.speaker {
-                                    Text(speaker)
-                                        .font(.caption.bold())
-                                        .foregroundStyle(Color.morandiTerracotta)
+                            HStack(alignment: .top, spacing: 0) {
+                                // 2px left border
+                                Rectangle()
+                                    .fill(Color.morandiBrick)
+                                    .frame(width: 2)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    if let speaker = seg.speaker {
+                                        Text(speaker)
+                                            .font(.caption.bold())
+                                            .foregroundStyle(Color.brand)
+                                    }
+                                    Text(seg.text)
+                                        .font(.body)
+                                        .foregroundStyle(Color.inkDark)
+                                        .lineSpacing(4)
+                                        .textSelection(.enabled)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                Text(seg.text)
-                                    .font(.body)
-                                    .lineSpacing(4)
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
                             }
+                            .background(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                             .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            Divider().padding(.leading, 16)
+                            .padding(.vertical, 4)
                         }
                     }
                     .padding(.vertical, 8)
@@ -429,7 +487,6 @@ struct MeetingDetailView: View {
         }
     }
 
-    // 將逐字稿解析成 speaker segments，每個 segment 獨立渲染（LazyVStack 懶加載）
     private var transcriptSegments: [TranscriptSegment] {
         guard let raw = record.transcript, !raw.isEmpty else { return [] }
         let lines = raw.components(separatedBy: "\n")
@@ -437,7 +494,6 @@ struct MeetingDetailView: View {
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { continue }
-            // 格式：[說話者 A] 文字內容
             if trimmed.hasPrefix("["),
                let closeBracket = trimmed.firstIndex(of: "]") {
                 let speaker = String(trimmed[trimmed.index(after: trimmed.startIndex)..<closeBracket])
@@ -452,7 +508,6 @@ struct MeetingDetailView: View {
 
     // MARK: - Transcript export
 
-    /// 將逐字稿寫入暫存 .txt 檔，供 ShareLink 下載
     private var transcriptExportURL: URL? {
         guard let text = record.transcript, !text.isEmpty else { return nil }
         let title = (record.title ?? "逐字稿")
@@ -471,7 +526,6 @@ struct MeetingDetailView: View {
         let dateStr = record.startedAt.formatted(date: .abbreviated, time: .shortened)
         var lines: [String] = []
 
-        // 主旨提示
         lines.append("【主旨】\(title) 會議記錄 - \(record.startedAt.formatted(.dateTime.year().month().day()))")
         lines.append("")
         lines.append("各位好，")
@@ -479,20 +533,17 @@ struct MeetingDetailView: View {
         lines.append("附上今日會議記錄如下，請確認相關決議與行動項目。")
         lines.append("")
 
-        // 會議資訊
         lines.append("【會議資訊】")
         lines.append("時間：\(dateStr)")
         if let sec = record.durationSeconds { lines.append("時長：\(sec.formattedDuration)") }
         lines.append("")
 
-        // 會議結論
         if !record.summaryPoints.isEmpty {
             lines.append("【會議結論】")
             for (i, p) in record.summaryPoints.enumerated() { lines.append("\(i+1). \(p)") }
             lines.append("")
         }
 
-        // 行動項目
         let steps = record.nextSteps
         if !steps.isEmpty {
             lines.append("【行動項目】")
@@ -506,7 +557,6 @@ struct MeetingDetailView: View {
             lines.append("")
         }
 
-        // 討論摘要
         if !record.topics.isEmpty {
             lines.append("【討論摘要】")
             for topic in record.topics {
@@ -520,6 +570,40 @@ struct MeetingDetailView: View {
         lines.append("請確認內容，若有疑問或補充歡迎回覆。謝謝。")
 
         return lines.joined(separator: "\n")
+    }
+}
+
+// MARK: - Custom Tab Picker
+
+struct MeetingTabPicker: View {
+    @Binding var selected: Int
+    let tabs: [String]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(tabs.indices, id: \.self) { i in
+                Button {
+                    withAnimation(.spring(duration: 0.25)) { selected = i }
+                } label: {
+                    Text(tabs[i])
+                        .font(.subheadline.weight(selected == i ? .semibold : .regular))
+                        .foregroundStyle(selected == i ? Color.inkDark : Color.inkGray)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(
+                            selected == i
+                                ? RoundedRectangle(cornerRadius: 10)
+                                    .fill(.white)
+                                    .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 1)
+                                : nil
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .background(Color.borderGray)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -539,12 +623,12 @@ struct InfoChip: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: icon).font(.caption2).foregroundStyle(Color.morandiWarmGray)
-            Text(text).font(.caption).foregroundStyle(Color.morandiWarmGray)
+            Image(systemName: icon).font(.caption2).foregroundStyle(Color.brand)
+            Text(text).font(.caption).foregroundStyle(Color.inkDark)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 4)
-        .background(Color.morandiDust)
+        .padding(.vertical, 6)
+        .background(Color.infoBg)
         .clipShape(Capsule())
     }
 }
@@ -562,7 +646,7 @@ struct AudioPlayerBar: View {
             } label: {
                 Image(systemName: vm.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: 38))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.brand)
             }
             .buttonStyle(.plain)
 
@@ -573,7 +657,7 @@ struct AudioPlayerBar: View {
                         set: { vm.seek(to: $0) }
                     )
                 )
-                .tint(.primary)
+                .tint(Color.brand)
 
                 HStack {
                     Text(Int(vm.currentTime).formattedDuration)
@@ -581,7 +665,7 @@ struct AudioPlayerBar: View {
                     Text(Int(vm.duration).formattedDuration)
                 }
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.inkGray)
             }
         }
         .onAppear { vm.setup(url: url) }
@@ -660,26 +744,24 @@ struct SpeakerEditorView: View {
     var body: some View {
         NavigationStack {
             List {
-                // 說話者名稱 + 發言權重排序
                 Section {
                     ForEach(orderedLabels, id: \.self) { label in
                         HStack(spacing: 12) {
-                            // 排名圓圈
                             let rank = (orderedLabels.firstIndex(of: label) ?? 0) + 1
                             Text("\(rank)")
                                 .font(.caption.bold())
                                 .frame(width: 28, height: 28)
-                                .background(rank == 1 ? Color.morandiTerracotta.opacity(0.18) : Color.morandiDust)
-                                .foregroundStyle(rank == 1 ? Color.morandiTerracotta : Color.morandiWarmGray)
+                                .background(rank == 1 ? Color.infoBg : Color.borderGray)
+                                .foregroundStyle(rank == 1 ? Color.brand : Color.inkGray)
                                 .clipShape(Circle())
 
                             Text("說話者 \(label)")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.inkGray)
                                 .frame(width: 64, alignment: .leading)
 
                             Image(systemName: "arrow.right")
                                 .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(Color.borderGray)
 
                             TextField(
                                 "輸入名稱（例如：老闆）",
@@ -699,15 +781,15 @@ struct SpeakerEditorView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("第 1 位的發言在歧見時優先採納", systemImage: "arrow.up.circle")
                             .font(.caption)
-                            .foregroundStyle(Color.morandiTerracotta)
+                            .foregroundStyle(Color.brand)
                         if names.values.contains(where: { !$0.isEmpty }) {
                             Label("已預填的名稱由 AI 從逐字稿推測，請確認是否正確", systemImage: "sparkles")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.inkGray)
                         }
                         Text("長按右側拖把可調整順序；命名後點「套用並重新分析」")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.inkGray)
                     }
                 }
 
@@ -736,13 +818,23 @@ struct SpeakerEditorView: View {
                         }
                     }
                     .foregroundStyle(.white)
-                    .listRowBackground(isReanalyzing ? Color.morandiDust : Color.brandCharcoal)
+                    .listRowBackground(isReanalyzing ? Color.borderGray : Color.ctaDark)
                     .disabled(isReanalyzing || !hasAnyName)
                 }
             }
             .environment(\.editMode, .constant(.active))
             .navigationTitle("說話者設定")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(
+                LinearGradient(
+                    colors: [Color.brand, Color.brandLight],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ),
+                for: .navigationBar
+            )
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("關閉") {
@@ -753,11 +845,9 @@ struct SpeakerEditorView: View {
             }
             .onAppear {
                 names = record.speakerNames
-                // 若已有儲存的順序則優先使用，否則依逐字稿出現順序
                 let saved = record.speakerOrder
                 let all = record.speakerLabels
                 if !saved.isEmpty {
-                    // 保留 saved 中還存在的標籤，補上 saved 中沒有的
                     let savedFiltered = saved.filter { all.contains($0) }
                     let missing = all.filter { !savedFiltered.contains($0) }
                     orderedLabels = savedFiltered + missing
@@ -787,7 +877,6 @@ struct SpeakerEditorView: View {
         isReanalyzing = true
         saveNamesAndOrder()
 
-        // 將 [說話者 A] 替換為使用者輸入的名稱
         var renamedTranscript = transcript
         for (label, name) in record.speakerNames where !name.isEmpty {
             renamedTranscript = renamedTranscript.replacingOccurrences(
@@ -796,7 +885,6 @@ struct SpeakerEditorView: View {
             )
         }
 
-        // 發言權重：將說話者標籤轉成顯示名稱後傳入
         let orderForAPI = orderedLabels.map { label in
             record.speakerNames[label].flatMap { $0.isEmpty ? nil : $0 } ?? "說話者 \(label)"
         }
