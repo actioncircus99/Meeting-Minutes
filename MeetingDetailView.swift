@@ -21,7 +21,6 @@ struct MeetingDetailView: View {
                 resultView
             }
         }
-        .navigationTitle(record.title ?? "會議詳情")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(
             LinearGradient(
@@ -34,9 +33,17 @@ struct MeetingDetailView: View {
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
+            // Figma: Inter 500 18px, letterSpacing -2.44% × 18px = -0.44pt
+            ToolbarItem(placement: .principal) {
+                Text(record.title ?? "會議詳情")
+                    .font(.system(size: 18, weight: .medium))
+                    .tracking(-0.44)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+            }
             if record.status == .complete {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 16) {
+                    HStack(spacing: DS.Spacing.lg) {
                         if !record.speakerLabels.isEmpty {
                             Button {
                                 showingSpeakerEditor = true
@@ -99,7 +106,7 @@ struct MeetingDetailView: View {
     private var failedView: some View {
         ZStack {
             Color.appBg.ignoresSafeArea()
-            VStack(spacing: 24) {
+            VStack(spacing: DS.Spacing.xl) {
                 ZStack {
                     Circle().fill(Color.morandiBrick.opacity(0.12)).frame(width: 110, height: 110)
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -116,7 +123,7 @@ struct MeetingDetailView: View {
                 } label: {
                     Group {
                         if isRetrying {
-                            HStack(spacing: 8) {
+                            HStack(spacing: DS.Spacing.sm) {
                                 ProgressView().tint(.white)
                                 Text("重新分析中...")
                             }
@@ -202,47 +209,50 @@ struct MeetingDetailView: View {
             Color.appBg.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Audio Player Card
-                if let path = record.audioFilePath,
-                   FileManager.default.fileExists(atPath: path) {
-                    AudioPlayerBar(url: URL(fileURLWithPath: path))
-                        .padding(16)
-                        .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
-                        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-                        .padding(.bottom, 12)
-                }
-
-                // Info Chips
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        InfoChip(icon: "calendar",
-                                 text: record.startedAt.formatted(date: .abbreviated, time: .shortened))
-                        if let sec = record.durationSeconds {
-                            InfoChip(icon: "clock", text: sec.formattedDuration)
-                        }
-                        InfoChip(icon: "checkmark.seal",
-                                 text: "\(record.summaryPoints.count) 個結論")
-                        if !record.nextSteps.isEmpty {
-                            InfoChip(icon: "checklist",
-                                     text: "\(record.nextSteps.filter { !$0.isCompleted }.count) 項待辦")
-                        }
-                        if !record.speakerNames.isEmpty {
-                            InfoChip(icon: "person.2",
-                                     text: "\(record.speakerNames.count) 位已命名")
-                        }
+                // Player + Chips 整組，統一給 20px 頂距，
+                // 無論 player 是否存在，chips 都不會黏頂
+                VStack(spacing: DS.Spacing.md) {
+                    // Audio Player Card（僅音檔存在時顯示）
+                    if let path = record.audioFilePath,
+                       FileManager.default.fileExists(atPath: path) {
+                        AudioPlayerBar(url: URL(fileURLWithPath: path))
+                            .padding(.vertical, DS.Spacing.page)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .background(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+                            .dsShadow(DS.Shadow.overlay)
                     }
-                    .padding(.horizontal, 16)
+
+                    // Info Chips
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: DS.Spacing.sm) {
+                            InfoChip(icon: "calendar",
+                                     text: record.startedAt.formatted(date: .abbreviated, time: .shortened))
+                            if let sec = record.durationSeconds {
+                                InfoChip(icon: "clock", text: sec.formattedDuration)
+                            }
+                            InfoChip(icon: "checkmark.seal",
+                                     text: "\(record.summaryPoints.count) 個結論")
+                            if !record.nextSteps.isEmpty {
+                                InfoChip(icon: "checklist",
+                                         text: "\(record.nextSteps.filter { !$0.isCompleted }.count) 項待辦")
+                            }
+                            if !record.speakerNames.isEmpty {
+                                InfoChip(icon: "person.2",
+                                         text: "\(record.speakerNames.count) 位已命名")
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.page)
+                    }
                 }
-                .padding(.bottom, 12)
+                .padding(.top, DS.Spacing.page)    // 永遠保留 20px 頂距，不依賴 player 是否存在
+                .padding(.bottom, DS.Spacing.md)
 
                 // Custom Tab Picker
                 MeetingTabPicker(selected: $selectedTab,
                                  tabs: ["結論", "討論摘要", "行動項目", "逐字稿"])
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, DS.Spacing.page) // Figma: x:20, width 353
+                    .padding(.bottom, 0)
 
                 currentTab
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -269,27 +279,33 @@ struct MeetingDetailView: View {
                     description: Text("重新分析後即可顯示"))
             } else {
                 ScrollView {
-                    VStack(spacing: 12) {
+                    VStack(spacing: DS.Spacing.md) {
                         ForEach(Array(record.summaryPoints.enumerated()), id: \.offset) { i, point in
-                            HStack(alignment: .top, spacing: 12) {
+                            HStack(alignment: .top, spacing: DS.Spacing.md) {
+                                // Figma: 24×24 circle, fill #6B7FD4, text white, Noto Sans TC 12px
                                 Text("\(i + 1)")
-                                    .font(.caption.bold())
-                                    .frame(width: 28, height: 28)
-                                    .background(Color.infoBg)
-                                    .foregroundStyle(Color.brand)
+                                    .font(.system(size: 12))
+                                    .frame(width: 24, height: 24)
+                                    .background(Color.brand)
+                                    .foregroundStyle(.white)
                                     .clipShape(Circle())
                                 Text(point)
-                                    .font(.body)
+                                    .font(.system(size: 16))   // Figma: Noto Sans TC 16px
                                     .foregroundStyle(Color.inkDark)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .padding(16)
+                            // Figma: padding 16px 16px 0px (top/horizontal only, no bottom)
+                            .padding(.top, DS.Spacing.lg)
+                            .padding(.horizontal, DS.Spacing.lg)
+                            .padding(.bottom, DS.Spacing.lg) // keep some bottom for readability; Figma clips at content bottom
                             .background(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+                            .dsShadow(DS.Shadow.subtle)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                    .padding(.horizontal, DS.Spacing.page) // Figma: content area padding 16px 20px 0px
+                    .padding(.top, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.lg)
                 }
             }
         }
@@ -304,25 +320,27 @@ struct MeetingDetailView: View {
                     description: Text("重新分析後即可顯示"))
             } else {
                 ScrollView {
-                    VStack(spacing: 12) {
+                    VStack(spacing: DS.Spacing.md) { // Figma: gap 12px
                         ForEach(record.topics) { topic in
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: DS.Spacing.sm) { // Figma: gap 8px
                                 Text(topic.title)
-                                    .font(.headline)
+                                    .font(.system(size: 16, weight: .medium)) // Figma: Noto Sans TC 500 16px
                                     .foregroundStyle(Color.brand)
                                 Text(topic.summary)
-                                    .font(.body)
-                                    .foregroundStyle(Color.inkGray)
-                                    .lineSpacing(4)
+                                    .font(.system(size: 16)) // Figma: Noto Sans TC 400 16px
+                                    .lineSpacing(4) // Figma: lineHeight 1.625em（較寬行距提升中文可讀性）
+                                    .foregroundStyle(Color.inkBody) // Figma: #444444
                             }
-                            .padding(16)
+                            .padding(DS.Spacing.lg) // Figma: padding 16px all sides
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+                            .dsShadow(DS.Shadow.subtle)
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
+                    .padding(.horizontal, DS.Spacing.page) // Figma: padding 16px 20px 0px
+                    .padding(.top, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.lg)
                 }
             }
         }
@@ -340,97 +358,100 @@ struct MeetingDetailView: View {
                 )
             } else {
                 ScrollView {
-                    VStack(spacing: 0) {
+                    VStack(spacing: DS.Spacing.lg) { // Figma: gap 16px between sections
                         let pending = record.nextSteps.filter { !$0.isCompleted }
                         let done    = record.nextSteps.filter { $0.isCompleted }
 
                         if !pending.isEmpty {
-                            sectionHeader("待完成（\(pending.count)）")
-                            VStack(spacing: 1) {
+                            VStack(spacing: DS.Spacing.sm) { // Figma: gap 8px within section
+                                Text("待完成（\(pending.count)）")
+                                    .font(.system(size: 12, weight: .medium)) // Figma: Inter 500 12px
+                                    .foregroundStyle(Color.inkGray)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 ForEach(pending) { step in nextStepRow(step: step) }
                             }
-                            .background(Color.borderGray)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
                         }
 
                         if !done.isEmpty {
-                            sectionHeader("已完成（\(done.count)）")
-                            VStack(spacing: 1) {
+                            VStack(spacing: DS.Spacing.sm) {
+                                Text("已完成（\(done.count)）")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(Color.inkGray)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 ForEach(done) { step in nextStepRow(step: step) }
                             }
-                            .background(Color.borderGray)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
                         }
                     }
-                    .padding(.bottom, 16)
+                    .padding(.horizontal, DS.Spacing.page) // Figma: padding 16px 20px 0px
+                    .padding(.top, DS.Spacing.lg)
+                    .padding(.bottom, DS.Spacing.lg)
                 }
             }
         }
     }
 
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Color.inkGray)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 8)
-    }
-
     private func nextStepRow(step: NextStepItem) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: DS.Spacing.md) {
             Button {
                 toggleStep(id: step.id)
             } label: {
                 Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(step.isCompleted ? Color.morandiSage : Color.borderGray)
-                    .font(.title3)
+                    .font(.system(size: 20))
+                    .foregroundStyle(step.isCompleted ? Color.morandiSage : Color.brand) // Figma: brand blue for unchecked
                     .animation(.spring(duration: 0.2), value: step.isCompleted)
             }
             .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(step.description)
-                        .strikethrough(step.isCompleted)
-                        .foregroundStyle(step.isCompleted ? Color.inkGray : Color.inkDark)
+            VStack(alignment: .leading, spacing: 6) { // Figma: gap 6px
+                Text(step.description)
+                    .font(.system(size: 16)) // Figma: Noto Sans TC 400 16px
+                    .tracking(-0.15)         // letterSpacing -0.93994% × 16px
+                    .foregroundStyle(Color.inkDark)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: DS.Spacing.sm) {
                     if let p = step.priority, !step.isCompleted {
                         Text(p)
-                            .font(.caption2.bold())
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(priorityColor(p).opacity(0.12))
+                            .font(.system(size: 11)) // Figma: 11px
+                            .padding(.horizontal, DS.Spacing.sm)
+                            .padding(.vertical, 2)
+                            .background(priorityBgColor(p))
                             .foregroundStyle(priorityColor(p))
-                            .clipShape(Capsule())
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.xs))
                     }
-                }
-                HStack(spacing: 12) {
                     if let a = step.assignee {
                         Label(a, systemImage: "person.fill")
-                            .font(.caption).foregroundStyle(Color.inkGray)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.inkGray)
                     }
                     if let d = step.dueDate {
                         Label(d, systemImage: "calendar")
-                            .font(.caption).foregroundStyle(Color.inkGray)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.inkGray)
                     }
                 }
             }
-
-            Spacer()
         }
-        .padding(14)
+        .padding(DS.Spacing.lg) // Figma: card padding 16px
         .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
+        .dsShadow(DS.Shadow.subtle)
+        .opacity(step.isCompleted ? 0.6 : 1.0) // Figma: completed cards at opacity 0.6
     }
 
     private func priorityColor(_ priority: String) -> Color {
         switch priority {
-        case "高": return .morandiBrick
-        case "中": return .morandiTerracotta
-        default:   return .inkGray
+        case "高": return .morandiBrick // #D93900
+        case "中": return .brand        // #6B7FD4
+        default:   return .inkGray      // #6B7280
+        }
+    }
+
+    private func priorityBgColor(_ priority: String) -> Color {
+        switch priority {
+        case "高": return Color(red: 254/255, green: 242/255, blue: 242/255) // #FEF2F2
+        case "中": return Color.infoBg                                        // #EEF0FF
+        default:   return Color(red: 241/255, green: 241/255, blue: 241/255) // #F1F1F1
         }
     }
 
@@ -454,34 +475,34 @@ struct MeetingDetailView: View {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(transcriptSegments) { seg in
                             HStack(alignment: .top, spacing: 0) {
-                                // 2px left border
+                                // 2px left border — brand blue 與說話者標籤顏色一致
                                 Rectangle()
-                                    .fill(Color.morandiBrick)
+                                    .fill(Color.brand)
                                     .frame(width: 2)
 
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: DS.Spacing.xs) {
                                     if let speaker = seg.speaker {
                                         Text(speaker)
                                             .font(.caption.bold())
                                             .foregroundStyle(Color.brand)
                                     }
                                     Text(seg.text)
-                                        .font(.body)
-                                        .foregroundStyle(Color.inkDark)
+                                        .font(.system(size: 16)) // 與其他 tab 正文一致
+                                        .foregroundStyle(Color.inkBody) // 長文閱讀用 inkBody
                                         .lineSpacing(4)
                                         .textSelection(.enabled)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                .padding(.horizontal, 12)
+                                .padding(.horizontal, DS.Spacing.md)
                                 .padding(.vertical, 10)
                             }
                             .background(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 4)
+                            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                            .padding(.horizontal, DS.Spacing.page) // 與其他 tab 內容區一致
+                            .padding(.vertical, DS.Spacing.xs)
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, DS.Spacing.sm)
                 }
             }
         }
@@ -580,30 +601,31 @@ struct MeetingTabPicker: View {
     let tabs: [String]
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: DS.Spacing.xs) { // Figma: gap 4px
             ForEach(tabs.indices, id: \.self) { i in
                 Button {
                     withAnimation(.spring(duration: 0.25)) { selected = i }
                 } label: {
                     Text(tabs[i])
-                        .font(.subheadline.weight(selected == i ? .semibold : .regular))
-                        .foregroundStyle(selected == i ? Color.inkDark : Color.inkGray)
+                        .font(.system(size: 14, weight: .medium)) // Figma: Noto Sans TC 500 14px
+                        .foregroundStyle(selected == i ? Color.brand : Color.inkGray) // active: #6B7FD4
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 7) // Figma: hug height, padding 7px top/bottom
                         .background(
                             selected == i
-                                ? RoundedRectangle(cornerRadius: 10)
+                                ? RoundedRectangle(cornerRadius: DS.Radius.md) // Figma: active radius 12px
                                     .fill(.white)
-                                    .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 1)
+                                    .dsShadow(DS.Shadow.subtle)
                                 : nil
                         )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(4)
-        .background(Color.borderGray)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        // Figma: padding 2px all sides
+        .padding(2)
+        .background(Color.borderGray) // #E5E7EB
+        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.fieldButton))
     }
 }
 
@@ -622,13 +644,18 @@ struct InfoChip: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon).font(.caption2).foregroundStyle(Color.brand)
-            Text(text).font(.caption).foregroundStyle(Color.inkDark)
+        HStack(spacing: 6) { // Figma: gap 6px
+            Image(systemName: icon)
+                .font(.system(size: 14))  // Figma: icon 16×16
+                .frame(width: 16, height: 16)
+                .foregroundStyle(Color.brand)
+            Text(text)
+                .font(.system(size: 14)) // Figma: Noto Sans TC 14px
+                .foregroundStyle(Color.inkDark)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Color.infoBg)
+        .padding(.horizontal, DS.Spacing.md) // Figma: padding 0px 12px
+        .padding(.vertical, DS.Spacing.sm)  // Figma: hug height, padding 8px top/bottom
+        .background(Color.chipBackground)
         .clipShape(Capsule())
     }
 }
@@ -640,33 +667,29 @@ struct AudioPlayerBar: View {
     @StateObject private var vm = AudioPlayerViewModel()
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 9) { // Figma: gap 9px
             Button {
                 vm.togglePlay()
             } label: {
                 Image(systemName: vm.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 38))
+                    .font(.system(size: 24)) // Figma: Button 24×24
                     .foregroundStyle(Color.brand)
             }
             .buttonStyle(.plain)
 
-            VStack(spacing: 4) {
-                Slider(
-                    value: Binding(
-                        get: { vm.duration > 0 ? vm.currentTime / vm.duration : 0 },
-                        set: { vm.seek(to: $0) }
-                    )
+            Slider(
+                value: Binding(
+                    get: { vm.duration > 0 ? vm.currentTime / vm.duration : 0 },
+                    set: { vm.seek(to: $0) }
                 )
-                .tint(Color.brand)
+            )
+            .tint(Color.brand)
 
-                HStack {
-                    Text(Int(vm.currentTime).formattedDuration)
-                    Spacer()
-                    Text(Int(vm.duration).formattedDuration)
-                }
-                .font(.caption2)
+            // Figma: "27:00 / 90:00" — single time label, Noto Sans TC 14px, #6B7280
+            Text("\(Int(vm.currentTime).formattedDuration) / \(Int(vm.duration).formattedDuration)")
+                .font(.system(size: 14))
                 .foregroundStyle(Color.inkGray)
-            }
+                .fixedSize()
         }
         .onAppear { vm.setup(url: url) }
         .onDisappear { vm.stop() }
@@ -746,7 +769,7 @@ struct SpeakerEditorView: View {
             List {
                 Section {
                     ForEach(orderedLabels, id: \.self) { label in
-                        HStack(spacing: 12) {
+                        HStack(spacing: DS.Spacing.md) {
                             let rank = (orderedLabels.firstIndex(of: label) ?? 0) + 1
                             Text("\(rank)")
                                 .font(.caption.bold())
@@ -778,7 +801,7 @@ struct SpeakerEditorView: View {
                 } header: {
                     Text("說話者名稱與發言權重")
                 } footer: {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                         Label("第 1 位的發言在歧見時優先採納", systemImage: "arrow.up.circle")
                             .font(.caption)
                             .foregroundStyle(Color.brand)

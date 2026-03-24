@@ -264,7 +264,7 @@ struct RecordingView: View {
                 phaseContent
                 Spacer()
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, DS.Spacing.page)
             .background(Color.morandiLinen.ignoresSafeArea())
             .navigationTitle(navTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -345,19 +345,19 @@ struct RecordingView: View {
     // MARK: - Idle
 
     private var idleView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xl) {
             Image(systemName: "mic.circle")
                 .font(.system(size: 90))
                 .foregroundStyle(Color.morandiTerracotta)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: DS.Spacing.sm) {
                 Text("會議名稱（選填）")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color.morandiWarmGray)
                 TextField("例如：產品週會、Q2 預算討論", text: $vm.meetingTitle)
-                    .padding(12)
+                    .padding(DS.Spacing.md)
                     .background(Color.morandiSand)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md))
                 Text("不填的話，AI 會根據內容自動命名")
                     .font(.caption)
                     .foregroundStyle(Color.morandiWarmGray.opacity(0.7))
@@ -368,26 +368,26 @@ struct RecordingView: View {
             } label: {
                 Label("開始錄音", systemImage: "mic.fill")
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, DS.Spacing.lg)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
             .background(Color.brandCharcoal)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
 
             Button {
                 showingFileImporter = true
             } label: {
                 Label("上傳錄音檔", systemImage: "square.and.arrow.down")
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, DS.Spacing.lg)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.morandiWarmGray)
             }
             .buttonStyle(.plain)
             .background(Color.morandiSand)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
 
             if let err = vm.errorMessage {
                 Text(err).foregroundStyle(Color.morandiBrick).font(.callout).multilineTextAlignment(.center)
@@ -398,7 +398,7 @@ struct RecordingView: View {
     // MARK: - Recording
 
     private var recordingView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xl) {
             ZStack {
                 ForEach([0, 1, 2], id: \.self) { i in
                     Circle()
@@ -435,26 +435,26 @@ struct RecordingView: View {
             Button { vm.requestStop() } label: {
                 Label("停止錄音", systemImage: "stop.circle.fill")
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, DS.Spacing.lg)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
             .background(Color.brandCharcoal)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
         }
     }
 
     // MARK: - Processing
 
     private func processingView(icon: String, title: String, subtitle: String) -> some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xl) {
             ZStack {
                 Circle().fill(Color.morandiDust).frame(width: 110, height: 110)
                 Image(systemName: icon).font(.system(size: 48)).foregroundStyle(.primary)
             }
             ProgressView().scaleEffect(1.3).tint(Color.morandiWarmGray)
-            VStack(spacing: 8) {
+            VStack(spacing: DS.Spacing.sm) {
                 Text(title).font(.title3.weight(.medium))
                 Text(subtitle).font(.callout).foregroundStyle(Color.morandiWarmGray).multilineTextAlignment(.center)
             }
@@ -464,12 +464,12 @@ struct RecordingView: View {
     // MARK: - Complete
 
     private func completeView(record: MeetingRecord) -> some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xl) {
             ZStack {
                 Circle().fill(Color.morandiSage.opacity(0.15)).frame(width: 110, height: 110)
                 Image(systemName: "checkmark.circle.fill").font(.system(size: 68)).foregroundStyle(Color.morandiSage)
             }
-            VStack(spacing: 8) {
+            VStack(spacing: DS.Spacing.sm) {
                 Text("完成！").font(.title2.bold())
                 Text(record.title ?? "會議摘要已產生")
                     .font(.subheadline).foregroundStyle(Color.morandiWarmGray).multilineTextAlignment(.center)
@@ -477,38 +477,38 @@ struct RecordingView: View {
             NavigationLink(destination: MeetingDetailView(record: record)) {
                 Text("查看摘要")
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, DS.Spacing.lg)
                     .fontWeight(.semibold)
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
             .background(Color.brandCharcoal)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
 
             Button {
                 dismiss()
             } label: {
                 Text("回到列表")
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, DS.Spacing.lg)
                     .fontWeight(.semibold)
                     .foregroundStyle(Color.morandiWarmGray)
             }
             .buttonStyle(.plain)
             .background(Color.morandiSand)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
         }
     }
 
     // MARK: - Failed
 
     private func failedView(message: String) -> some View {
-        VStack(spacing: 24) {
+        VStack(spacing: DS.Spacing.xl) {
             ZStack {
                 Circle().fill(Color.morandiBrick.opacity(0.12)).frame(width: 110, height: 110)
                 Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 54)).foregroundStyle(Color.morandiBrick)
             }
-            VStack(spacing: 8) {
+            VStack(spacing: DS.Spacing.sm) {
                 Text("分析失敗").font(.title2.bold())
                 Text(message).foregroundStyle(Color.morandiWarmGray).multilineTextAlignment(.center)
             }
@@ -522,21 +522,21 @@ struct RecordingView: View {
                 } label: {
                     Label("重新分析", systemImage: "arrow.clockwise")
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
+                        .padding(.vertical, DS.Spacing.lg)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
                 .background(Color.brandCharcoal)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
             }
 
             Button("關閉") { dismiss() }
                 .buttonStyle(.plain)
-                .padding(.vertical, 16)
+                .padding(.vertical, DS.Spacing.lg)
                 .frame(maxWidth: .infinity)
                 .background(Color.morandiSand)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.card))
                 .foregroundStyle(Color.morandiWarmGray)
         }
     }

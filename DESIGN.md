@@ -22,24 +22,28 @@
 
 ## 顏色系統
 
+> **Swift 引用**：`Color.xxx`，定義於 `MeetingRecorderApp.swift`。
+> 新程式碼優先使用 DESIGN.md 名稱（右欄），舊程式碼沿用程式碼名稱（左欄）亦可。
+
 ### 語義 Token
 
-| Token | HEX | 用途 |
-|-------|-----|------|
-| `gradientTop` | `#B4C8FA` | 漸層起點（柔和藍紫，頁面頂部） |
-| `gradientBottom` | `#D8B8F5` | 漸層終點（薰衣草粉，頁面底部） |
-| `brandPurple` | `#6B7FD4` | 主要 CTA 按鈕色、強調色、icon |
-| `brandPurpleLight` | `#8B9FE8` | CTA 按鈕漸層次色（與 brandPurple 搭配） |
-| `surfaceWhite` | `#FFFFFF` | 卡片、Sheet、輸入框背景 |
-| `surfaceLight` | `#F5F7FA` | 內容頁面底色（MeetingDetailView 等） |
-| `textPrimary` | `#1A1A2E` | 主文字（深藍黑，用於白色 / 淺色背景） |
-| `textSecondary` | `#6B7280` | 次要文字、說明文字 |
-| `textOnGradient` | `#FFFFFF` | 漸層背景上的所有文字與 icon |
-| `accentSage` | `#008489` | 成功、完成狀態 |
-| `accentBrick` | `#D93900` | 錯誤、警告、刪除 |
-| `accentCoral` | `#FF5A5F` | 錄音中指示燈、置頂標記、發言權重 |
-| `borderLight` | `#E5E7EB` | 卡片邊框、分隔線 |
-| `chipBackground` | `#EEF0FF` | InfoChip、Badge 背景（淡紫白） |
+| Token（DESIGN.md） | Swift 程式碼名稱 | HEX | 用途 |
+|--------------------|----------------|-----|------|
+| `gradientTop` | `Color.gradientTop` | `#B4C8FA` | 漸層起點（柔和藍紫，頁面頂部） |
+| `gradientBottom` | `Color.gradientBottom` | `#D8B8F5` | 漸層終點（薰衣草粉，頁面底部） |
+| `brandPurple` | `Color.brandPurple` / `Color.brand` | `#6B7FD4` | 主要 CTA 按鈕色、強調色、icon |
+| `brandPurpleLight` | `Color.brandPurpleLight` / `Color.brandLight` | `#8B9FE8` | CTA 按鈕漸層次色 |
+| `surfaceWhite` | `Color.surfaceWhite` / `Color.white` | `#FFFFFF` | 卡片、Sheet、輸入框背景 |
+| `surfaceLight` | `Color.surfaceLight` / `Color.appBg` | `#F5F7FA` | 內容頁面底色（MeetingDetailView 等） |
+| `textPrimary` | `Color.textPrimary` / `Color.inkDark` | `#1A1A2E` | 主文字（深藍黑，用於白色 / 淺色背景） |
+| `textSecondary` | `Color.textSecondary` / `Color.inkGray` | `#6B7280` | 次要文字、說明文字 |
+| `textOnGradient` | `Color.textOnGradient` / `.white` | `#FFFFFF` | 漸層背景上的所有文字與 icon |
+| `accentSage` | `Color.accentSage` / `Color.morandiSage` | `#008489` | 成功、完成狀態 |
+| `accentBrick` | `Color.accentBrick` / `Color.morandiBrick` | `#D93900` | 錯誤、警告、刪除 |
+| `accentCoral` | `Color.accentCoral` / `Color.morandiTerracotta` | `#FF5A5F` | 錄音中指示燈、置頂標記、發言權重 |
+| `borderLight` | `Color.borderLight` / `Color.borderGray` | `#E5E7EB` | 卡片邊框、分隔線 |
+| `chipBackground` | `Color.chipBackground` / `Color.infoBg` | `#EEF0FF` | InfoChip、Badge 背景（淡紫白） |
+| `inkBody` | `Color.inkBody` | `#444444` | 長篇正文（摘要、逐字稿等閱讀段落） |
 
 > **原則**：不直接使用 `.red` / `.blue` / `.purple`，一律透過 token 引用。
 
@@ -97,32 +101,35 @@ LinearGradient(
 
 ---
 
-## 間距系統（8pt Grid）
+## 間距系統（4pt Grid）
 
-| 用途 | 數值 |
-|------|------|
-| 最小間距 | 4pt |
-| 元素間距（小） | 8pt |
-| 元素間距（中） | 12pt |
-| 內容 padding | 16pt |
-| 區塊間距 | 24pt |
-| 頁面水平 padding | **20pt**（禁止 28pt） |
-| 頁面頂部 padding | 48pt |
-| 按鈕垂直 padding | 16pt |
+> **Swift 引用**：`DS.Spacing.xxx`，定義於 `DesignSystem.swift`。
+
+| Token | 數值 | 用途 |
+|-------|------|------|
+| `DS.Spacing.xs` | 4pt | 最小間距（badge 內距、微調） |
+| `DS.Spacing.sm` | 8pt | 元素間距（小） |
+| `DS.Spacing.md` | 12pt | 元素間距（中） |
+| `DS.Spacing.lg` | 16pt | 內容 padding、卡片 padding、按鈕垂直 padding |
+| `DS.Spacing.page` | **20pt** | 頁面水平 padding（禁止使用 28pt） |
+| `DS.Spacing.xl` | 24pt | 區塊間距 |
+| `DS.Spacing.pageTop` | 48pt | 頁面頂部 padding（Header 距頂） |
 
 ---
 
 ## 圓角規範
 
-| 元件 | 圓角 |
-|------|------|
-| 主要按鈕（CTA） | `Capsule()`（全圓） |
-| 卡片、FieldCard | 16pt |
-| 輸入框內容區 | 12pt |
-| 錯誤 Banner | 12pt |
-| InfoChip | `Capsule()` |
-| Badge | 8pt |
-| AudioPlayerBar | 16pt |
+> **Swift 引用**：`DS.Radius.xxx`，定義於 `DesignSystem.swift`。
+> 全圓膠囊形一律使用 `.clipShape(Capsule())`，不要寫死大半徑數值。
+
+| Token | 數值 | 適用元件 |
+|-------|------|---------|
+| `DS.Radius.xs` | 4pt | 行內優先級 Badge |
+| `DS.Radius.sm` | 8pt | Badge 圓圈、逐字稿行卡片 |
+| `DS.Radius.md` | 12pt | 輸入框、ErrorBanner、Segment active tab |
+| `DS.Radius.fieldButton` | 14pt | 表單欄位背景、Segment 外框 |
+| `DS.Radius.card` | 16pt | 卡片、FieldCard、AudioPlayerBar |
+| `Capsule()` | 全圓 | 主要按鈕（CTA）、InfoChip、次要按鈕 |
 
 ---
 

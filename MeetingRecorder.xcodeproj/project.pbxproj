@@ -18,6 +18,7 @@
 		F75BD6AD2F6A95DC0097863B /* RecordingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75BD6A72F6A95DC0097863B /* RecordingView.swift */; };
 		F75BD6AE2F6A95DC0097863B /* MeetingListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75BD6A62F6A95DC0097863B /* MeetingListView.swift */; };
 		F75BD6B22F6AB5B60097863B /* MeetingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75BD6B12F6AB5B60097863B /* MeetingDetailView.swift */; };
+		F75BD6C12F7A00000097863B /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F75BD6C02F7A00000097863B /* DesignSystem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +43,7 @@
 		F75BD6182F6A90EE0097863B /* MeetingRecorderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeetingRecorderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F75BD6222F6A90EE0097863B /* MeetingRecorderUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeetingRecorderUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F75BD6982F6A95740097863B /* MeetingRecorderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingRecorderApp.swift; sourceTree = "<group>"; };
+		F75BD6C02F7A00000097863B /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		F75BD69A2F6A95790097863B /* MeetingRecorder-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MeetingRecorder-Bridging-Header.h"; sourceTree = "<group>"; };
 		F75BD69B2F6A95B90097863B /* MeetingRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingRecord.swift; sourceTree = "<group>"; };
 		F75BD69D2F6A95D30097863B /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
@@ -130,6 +132,7 @@
 				F75BD6A72F6A95DC0097863B /* RecordingView.swift */,
 				F75BD6A82F6A95DC0097863B /* SettingsView.swift */,
 				F75BD6B12F6AB5B60097863B /* MeetingDetailView.swift */,
+			F75BD6C02F7A00000097863B /* DesignSystem.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -299,6 +302,7 @@
 				F75BD6A12F6A95D30097863B /* AudioRecordingManager.swift in Sources */,
 				F75BD6A22F6A95D30097863B /* AIService.swift in Sources */,
 				F75BD6992F6A95740097863B /* MeetingRecorderApp.swift in Sources */,
+			F75BD6C12F7A00000097863B /* DesignSystem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

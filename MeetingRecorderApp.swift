@@ -17,6 +17,8 @@ extension Color {
     static let inkDark           = Color(red: 26/255,  green: 26/255,  blue: 46/255)
     /// #6B7280  Text Secondary
     static let inkGray           = Color(red: 107/255, green: 114/255, blue: 128/255)
+    /// #444444  Text Body — 長篇正文（摘要、逐字稿等需要閱讀的段落）
+    static let inkBody           = Color(red: 68/255,  green: 68/255,  blue: 68/255)
     /// #EEF0FF  Info / Chip Background
     static let infoBg            = Color(red: 238/255, green: 240/255, blue: 255/255)
     /// #E5E7EB  Border / Divider
@@ -37,6 +39,37 @@ extension Color {
     static let morandiLinen      = Color(red: 0.97, green: 0.97, blue: 0.97)
     static let morandiSand       = Color(red: 1.00, green: 1.00, blue: 1.00)
     static let morandiDust       = Color(red: 0.92, green: 0.92, blue: 0.92)
+
+    // ── DESIGN.md 語義 Token（對應 Figma 規格名稱）──────────────────────────
+    // 新程式碼請優先使用以下名稱，與 DESIGN.md 保持一致。
+    /// #B4C8FA  全畫面漸層起點（頁面頂部）
+    static let gradientTop      = Color(red: 180/255, green: 200/255, blue: 250/255)
+    /// #D8B8F5  全畫面漸層終點（頁面底部）
+    static let gradientBottom   = Color(red: 216/255, green: 184/255, blue: 245/255)
+    /// #6B7FD4  主色 CTA 按鈕 → brand
+    static let brandPurple      = brand
+    /// #8B9FE8  CTA 漸層次色 → brandLight
+    static let brandPurpleLight = brandLight
+    /// #FFFFFF  卡片、Sheet 背景
+    static let surfaceWhite     = Color.white
+    /// #F5F7FA  內容頁面底色 → appBg
+    static let surfaceLight     = appBg
+    /// #1A1A2E  主文字 → inkDark
+    static let textPrimary      = inkDark
+    /// #6B7280  次要文字 → inkGray
+    static let textSecondary    = inkGray
+    /// #FFFFFF  漸層背景上的文字與 icon
+    static let textOnGradient   = Color.white
+    /// #008489  成功、完成 → morandiSage
+    static let accentSage       = morandiSage
+    /// #D93900  錯誤、警告、刪除 → morandiBrick
+    static let accentBrick      = morandiBrick
+    /// #FF5A5F  錄音中指示燈、置頂標記 → morandiTerracotta
+    static let accentCoral      = morandiTerracotta
+    /// #E5E7EB  卡片邊框、分隔線 → borderGray
+    static let borderLight      = borderGray
+    /// #EEF0FF  InfoChip、Badge 背景 → infoBg
+    static let chipBackground   = infoBg
 }
 
 @main
